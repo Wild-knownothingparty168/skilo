@@ -1,12 +1,14 @@
 import { getClient, loadConfig } from '../api/client.js';
-import { readFile, unlink } from 'node:fs/promises';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { validateSkillContent } from '../manifest.js';
 import * as tar from 'tar';
 import { join } from 'node:path';
 import * as crypto from 'node:crypto';
-import { statSync } from 'node:fs';
+import { statSync, existsSync } from 'node:fs';
+import { generateAnonName, generateClaimToken } from '../anon-names.js';
 
 const SKILL_FILE = 'SKILL.md';
+const SKILO_SECRET_FILE = '.skilo-secret';
 
 async function createTarball(cwd: string): Promise<{ buffer: Buffer; size: number; checksum: string }> {
   const tempFile = join(cwd, '.skilo-temp.tgz');
@@ -51,7 +53,24 @@ export async function publishCommand(path?: string): Promise<void> {
     const manifest = result.manifest!;
 
     const { buffer } = await createTarball(cwd);
-    const namespace = config.namespace || 'default';
+
+    // Generate namespace - use config or generate anon name
+    let namespace: string;
+    let claimToken: string | undefined;
+
+    if (config.token || config.apiKey) {
+      // Logged in - use their username
+      namespace = config.namespace || 'default';
+    } else {
+      // Anonymous - generate memorable name + claim token
+      namespace = generateAnonName();
+      claimToken = generateClaimToken();
+
+      // Save claim token to file for later claiming
+      await writeFile(join(cwd, SKILO_SECRET_FILE), claimToken, 'utf-8');
+      console.log(`📝 Saved claim token to ${SKILO_SECRET_FILE}`);
+    }
+
     const isListed = !!(config.token || config.apiKey);
 
     const response = await client.publishSkill(
@@ -60,12 +79,19 @@ export async function publishCommand(path?: string): Promise<void> {
       manifest.description,
       manifest.version || '0.1.0',
       buffer.buffer as ArrayBuffer,
-      isListed
+      isListed,
+      claimToken
     );
 
-    console.log(`✓ Published ${namespace}/${manifest.name}@${manifest.version || '0.1.0'}`);
-    if (!isListed) {
-      console.log('  (unlisted - login to make public)');
+    console.log(`\n✓ Published @${namespace}/${manifest.name}@${manifest.version || '0.1.0'}`);
+
+    if (!isListed && claimToken) {
+      console.log(`  🔐 Claim token: ${claimToken}`);
+      console.log(`\n  To claim this skill and make it public:`);
+      console.log(`    skilo login`);
+      console.log(`    skilo claim @${namespace}/${manifest.name} --token ${claimToken}`);
+    } else if (isListed) {
+      console.log('  (public)');
     }
   } catch (e) {
     console.error(`Publish failed: ${(e as Error).message}`);

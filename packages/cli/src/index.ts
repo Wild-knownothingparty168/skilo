@@ -19,6 +19,7 @@ import { shareCommand } from './commands/share.js';
 import { lockCommand, verifyLockCommand } from './commands/lock.js';
 import { auditCommand } from './commands/audit.js';
 import { syncCommand } from './commands/sync.js';
+import { claimCommand } from './commands/claim.js';
 
 const program = new Command();
 
@@ -56,6 +57,13 @@ program.command('publish [path]').description('Publish skill (default: .)').acti
 program.command('unpublish <skill>').description('Remove a skill').action((s) => {
   console.log('Use: skilo yank namespace/name@version to remove specific versions');
 });
+
+// Identity (auth required)
+program
+  .command('claim <skill>')
+  .description('Claim an anonymous skill')
+  .option('--token <token>', 'Claim token')
+  .action(claimCommand);
 
 // Lifecycle (auth required)
 program

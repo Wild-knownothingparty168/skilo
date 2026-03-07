@@ -100,7 +100,8 @@ export class ApiClient {
     description: string,
     version: string,
     tarball: ArrayBuffer,
-    isListed: boolean = false
+    isListed: boolean = false,
+    claimToken?: string
   ): Promise<{ id: string }> {
     const url = `${this.baseUrl}/v1/skills`;
 
@@ -110,6 +111,9 @@ export class ApiClient {
     formData.append('description', description);
     formData.append('version', version);
     formData.append('listed', isListed.toString());
+    if (claimToken) {
+      formData.append('claim_token', claimToken);
+    }
     formData.append('tarball', new Blob([tarball]));
 
     const res = await fetchWithRetry(url, {
@@ -218,6 +222,26 @@ export class ApiClient {
     }
 
     return res.json();
+  }
+
+  async claimSkill(fullName: string, token: string): Promise<void> {
+    // Parse namespace/name from fullName
+    const [namespace, name] = fullName.split('/');
+    if (!namespace || !name) {
+      throw new Error('Invalid skill reference. Use format: namespace/name');
+    }
+
+    const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/claim`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ token }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Claim failed: ${res.status} ${res.statusText}`);
+    }
   }
 }
 
