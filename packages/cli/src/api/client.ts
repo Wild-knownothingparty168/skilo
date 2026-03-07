@@ -172,6 +172,53 @@ export class ApiClient {
 
     return res.json();
   }
+
+  async deprecateSkill(namespace: string, name: string, message: string): Promise<void> {
+    const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/deprecate`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Deprecate failed: ${res.status} ${res.statusText}`);
+    }
+  }
+
+  async yankVersion(namespace: string, name: string, version: string, reason?: string): Promise<void> {
+    const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/yank`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ version, reason }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Yank failed: ${res.status} ${res.statusText}`);
+    }
+  }
+
+  async createShareLink(
+    namespace: string,
+    name: string,
+    oneTime: boolean,
+    expiresAt?: number,
+    maxUses?: number
+  ): Promise<{ url: string }> {
+    const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/share`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ one_time: oneTime, expires_at: expiresAt, max_uses: maxUses }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Share failed: ${res.status} ${res.statusText}`);
+    }
+
+    return res.json();
+  }
 }
 
 // Config file management

@@ -1,5 +1,7 @@
 node_modules/
 dist/
-.env
+.turbo/
+pnpm-lock.yaml
 *.tgz
-.skelo-temp.tgz
+.skilo-temp.tgz
+skilo.lock.json
