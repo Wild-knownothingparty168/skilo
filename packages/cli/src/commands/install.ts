@@ -4,7 +4,8 @@ import { pipeline } from 'node:stream/promises';
 import { extract } from 'tar';
 import { join } from 'node:path';
 import { createGunzip } from 'node:zlib';
-import { mkdir, unlink } from 'node:fs/promises';
+import { mkdir, unlink, readFile } from 'node:fs/promises';
+import * as crypto from 'node:crypto';
 
 function parseSkillRef(skill: string): { namespace: string; name: string; version?: string } {
   const parts = skill.split('@');
@@ -35,8 +36,31 @@ export async function installCommand(skill: string, _options?: { global?: boolea
 
     console.log(`Installing ${namespace}/${name}@${versionToInstall}...`);
 
+    // Get verification info
+    const verifyResponse = await fetch(`${client.baseUrl}/v1/skills/${namespace}/${name}/verify?version=${versionToInstall}`);
+    let expectedChecksum: string | undefined;
+    if (verifyResponse.ok) {
+      const verifyData = await verifyResponse.json();
+      expectedChecksum = verifyData.checksum;
+      if (verifyData.signature) {
+        console.log('✓ Skill is signed');
+      }
+    }
+
     // Download tarball
     const tarball = await client.downloadTarball(namespace, name, versionToInstall);
+
+    // Verify checksum
+    if (expectedChecksum) {
+      const actualChecksum = crypto.createHash('sha256').update(Buffer.from(tarball)).digest('hex');
+      if (actualChecksum !== expectedChecksum) {
+        console.error('❌ Checksum verification failed!');
+        console.error(`  Expected: ${expectedChecksum}`);
+        console.error(`  Actual:   ${actualChecksum}`);
+        process.exit(1);
+      }
+      console.log('✓ Checksum verified');
+    }
 
     // Extract to skills directory
     const skillsDir = getSkillsDir();

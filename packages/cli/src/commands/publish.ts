@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import * as crypto from 'node:crypto';
 import { statSync, existsSync } from 'node:fs';
 import { generateAnonName, generateClaimToken } from '../anon-names.js';
+import { loadOrGenerateKeys, calculateChecksum, sign, encodeBase64Url } from '../utils/signing.js';
 
 const SKILL_FILE = 'SKILL.md';
 const SKILO_SECRET_FILE = '.skilo-secret';
@@ -27,7 +28,7 @@ async function createTarball(cwd: string): Promise<{ buffer: Buffer; size: numbe
   return { buffer, size: buffer.length, checksum };
 }
 
-export async function publishCommand(path?: string): Promise<void> {
+export async function publishCommand(path?: string, options?: { sign?: boolean }): Promise<void> {
   const cwd = !path || path === '.' ? process.cwd() : path;
   const skillPath = join(cwd, SKILL_FILE);
 
@@ -52,7 +53,24 @@ export async function publishCommand(path?: string): Promise<void> {
     const result = validateSkillContent(content);
     const manifest = result.manifest!;
 
-    const { buffer } = await createTarball(cwd);
+    const { buffer, checksum } = await createTarball(cwd);
+
+    // Sign if requested or if user is logged in
+    let signature: string | undefined;
+    let publicKey: string | undefined;
+
+    if (options?.sign || config.token || config.apiKey) {
+      try {
+        const keys = await loadOrGenerateKeys();
+        const checksumBytes = new TextEncoder().encode(checksum);
+        const sig = await sign(checksumBytes, keys.privateKey);
+        signature = encodeBase64Url(sig);
+        publicKey = encodeBase64Url(keys.publicKey);
+        console.log('✓ Signed skill bundle');
+      } catch (e) {
+        console.warn('Warning: Could not sign skill:', (e as Error).message);
+      }
+    }
 
     // Generate namespace - use config or generate anon name
     let namespace: string;
@@ -80,7 +98,9 @@ export async function publishCommand(path?: string): Promise<void> {
       manifest.version || '0.1.0',
       buffer.buffer as ArrayBuffer,
       isListed,
-      claimToken
+      claimToken,
+      signature,
+      publicKey
     );
 
     console.log(`\n✓ Published @${namespace}/${manifest.name}@${manifest.version || '0.1.0'}`);

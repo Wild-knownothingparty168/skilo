@@ -6,7 +6,7 @@ node_compat = true
 [[d1_databases]]
 binding = "DB"
 database_name = "skilo"
-database_id = "<your-database-id>"
+database_id = "109e2039-e037-4ad5-b194-8ff5c7db7176"
 
 [[r2_buckets]]
 binding = "SKILLPACK_BUCKET"
@@ -14,7 +14,7 @@ bucket_name = "skilo-bundles"
 
 [[kv_namespaces]]
 binding = "SKILLPACK_KV"
-id = "<your-kv-namespace-id>"
+id = "ee9048598adc4d24a46a4432781f71b0"
 
 [env.production]
 d1_databases = [

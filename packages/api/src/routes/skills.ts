@@ -1,6 +1,6 @@
-// Skills API routes
 import { Hono } from 'hono';
 import type { Env } from '../index.js';
+import { rateLimiters } from '../middleware/rateLimit.js';
 
 export const skillsRouter = new Hono<{ Bindings: Env }>();
 
@@ -169,7 +169,7 @@ skillsRouter.get('/:namespace/:name/tarball/:version', async (c) => {
 });
 
 // Publish skill - no auth required, defaults to unlisted
-skillsRouter.post('/', async (c) => {
+skillsRouter.post('/', rateLimiters.publish, async (c) => {
   const formData = await c.req.formData();
 
   const name = formData.get('name')?.toString();
@@ -177,6 +177,9 @@ skillsRouter.post('/', async (c) => {
   const description = formData.get('description')?.toString() || '';
   const version = formData.get('version')?.toString();
   const listed = formData.get('listed')?.toString() === 'true';
+  const claimToken = formData.get('claim_token')?.toString();
+  const signature = formData.get('signature')?.toString();
+  const publicKey = formData.get('public_key')?.toString();
   const tarball = formData.get('tarball') as File | null;
 
   if (!name || !version || !tarball) {
@@ -185,9 +188,6 @@ skillsRouter.post('/', async (c) => {
       400
     );
   }
-
-  // Spam protection: rate limit unlisted publishes
-  // TODO: Implement proper rate limiting with KV
 
   try {
     const arrayBuffer = await tarball.arrayBuffer();
@@ -222,12 +222,12 @@ skillsRouter.post('/', async (c) => {
       ).bind(skillId, name, namespace, description, version, listed ? 1 : 0).run();
     }
 
-    // Create version record
+    // Create version record with signature if provided
     const versionId = generateId();
     await c.env.DB.prepare(
-      `INSERT INTO skill_versions (id, skill_id, version, tarball_url, size, checksumsha256)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(versionId, skillId, version, r2Key, buffer.length, checksum).run();
+      `INSERT INTO skill_versions (id, skill_id, version, tarball_url, size, checksumsha256, signature, public_key)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(versionId, skillId, version, r2Key, buffer.length, checksum, signature || null, publicKey || null).run();
 
     return c.json({
       id: skillId,
@@ -236,6 +236,7 @@ skillsRouter.post('/', async (c) => {
       version,
       listed,
       tarballUrl: `/v1/skills/${namespace}/${name}/tarball/${version}`,
+      signature: signature ? true : false,
     }, 201);
   } catch (e) {
     console.error('Publish error:', e);
@@ -256,6 +257,226 @@ skillsRouter.delete('/:namespace/:name', authenticate, async (c) => {
     return c.json({ success: true });
   } catch (e) {
     return c.json({ error: 'delete_failed', message: (e as Error).message }, 500);
+  }
+});
+
+// Create share link - rate limited
+skillsRouter.post('/:namespace/:name/share', rateLimiters.createShare, async (c) => {
+  const namespace = c.req.param('namespace');
+  const name = c.req.param('name');
+  const body = await c.req.json();
+
+  try {
+    // Get skill
+    const skillStmt = await c.env.DB.prepare(
+      `SELECT id FROM skills WHERE namespace = ? AND name = ?`
+    );
+    const skill = await skillStmt.bind(namespace, name).first();
+
+    if (!skill) {
+      return c.json({ error: 'not_found', message: 'Skill not found' }, 404);
+    }
+
+    // Generate token (base62, 8 chars, no lookalikes)
+    const token = generateShareToken();
+
+    // Parse options
+    const oneTime = body.one_time === true;
+    const expiresAt = body.expires_at ? Math.floor(body.expires_at / 1000) : null;
+    const maxUses = body.max_uses || null;
+    const passwordHash = body.password ? await hashPassword(body.password) : null;
+
+    // Create share link
+    const shareId = generateId();
+    await c.env.DB.prepare(
+      `INSERT INTO share_links (id, skill_id, token, one_time, expires_at, max_uses, password_hash, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(shareId, skill.id, token, oneTime ? 1 : 0, expiresAt, maxUses, passwordHash, null).run();
+
+    const url = `https://skilo.xyz/s/${token}`;
+
+    return c.json({
+      token,
+      url,
+      oneTime,
+      expiresAt: expiresAt ? expiresAt * 1000 : null,
+      maxUses,
+    }, 201);
+  } catch (e) {
+    console.error('Share creation error:', e);
+    return c.json({ error: 'share_failed', message: (e as Error).message }, 500);
+  }
+});
+
+// Resolve share link - rate limited
+skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
+  const token = c.req.param('token');
+
+  try {
+    // Get share link
+    const shareStmt = await c.env.DB.prepare(
+      `SELECT sl.*, s.name, s.namespace, s.description, s.latest_version, s.author,
+              s.homepage, s.repository, s.keywords, s.created_at, s.updated_at,
+              sv.tarball_url, sv.size, sv.checksumsha256
+       FROM share_links sl
+       JOIN skills s ON sl.skill_id = s.id
+       LEFT JOIN skill_versions sv ON s.id = sv.skill_id AND sv.version = s.latest_version
+       WHERE sl.token = ?`
+    );
+    const share = await shareStmt.bind(token).first();
+
+    if (!share) {
+      return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
+    }
+
+    // Check if expired
+    if (share.expires_at && share.expires_at < Math.floor(Date.now() / 1000)) {
+      return c.json({ error: 'expired', message: 'Share link has expired' }, 410);
+    }
+
+    // Check if max uses reached
+    if (share.max_uses && share.uses_count >= share.max_uses) {
+      return c.json({ error: 'exhausted', message: 'Share link has reached max uses' }, 410);
+    }
+
+    // Check if password protected
+    if (share.password_hash) {
+      return c.json({
+        requiresPassword: true,
+        message: 'Password required',
+      });
+    }
+
+    // Update usage
+    await c.env.DB.prepare(
+      `UPDATE share_links SET uses_count = uses_count + 1, opened_at = unixepoch() WHERE id = ?`
+    ).bind(share.id).run();
+
+    // If one-time, mark as used
+    if (share.one_time) {
+      await c.env.DB.prepare(
+        `UPDATE share_links SET max_uses = 1, uses_count = 1 WHERE id = ?`
+      ).bind(share.id).run();
+    }
+
+    return c.json({
+      skill: {
+        name: share.name,
+        namespace: share.namespace,
+        description: share.description,
+        version: share.latest_version,
+        author: share.author,
+        homepage: share.homepage,
+        repository: share.repository,
+        keywords: share.keywords ? JSON.parse(share.keywords) : [],
+        tarballUrl: share.tarball_url || '',
+        size: share.size || 0,
+        checksum: share.checksumsha256 || '',
+        listed: false,
+        createdAt: share.created_at,
+        updatedAt: share.updated_at,
+      },
+      requiresPassword: false,
+    });
+  } catch (e) {
+    console.error('Share resolve error:', e);
+    return c.json({ error: 'resolve_failed', message: (e as Error).message }, 500);
+  }
+});
+
+// Verify share password
+skillsRouter.post('/share/:token/verify', async (c) => {
+  const token = c.req.param('token');
+  const body = await c.req.json();
+  const password = body.password;
+
+  if (!password) {
+    return c.json({ error: 'validation_error', message: 'Password is required' }, 400);
+  }
+
+  try {
+    // Get share link with password
+    const shareStmt = await c.env.DB.prepare(
+      `SELECT sl.*, s.name, s.namespace, s.description, s.latest_version, s.author,
+              s.homepage, s.repository, s.keywords, s.created_at, s.updated_at,
+              sv.tarball_url, sv.size, sv.checksumsha256
+       FROM share_links sl
+       JOIN skills s ON sl.skill_id = s.id
+       LEFT JOIN skill_versions sv ON s.id = sv.skill_id AND sv.version = s.latest_version
+       WHERE sl.token = ?`
+    );
+    const share = await shareStmt.bind(token).first();
+
+    if (!share) {
+      return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
+    }
+
+    // Verify password (simple bcrypt comparison)
+    const passwordValid = await verifyPassword(password, share.password_hash);
+    if (!passwordValid) {
+      return c.json({ error: 'unauthorized', message: 'Invalid password' }, 401);
+    }
+
+    // Update usage
+    await c.env.DB.prepare(
+      `UPDATE share_links SET uses_count = uses_count + 1, opened_at = unixepoch() WHERE id = ?`
+    ).bind(share.id).run();
+
+    return c.json({
+      skill: {
+        name: share.name,
+        namespace: share.namespace,
+        description: share.description,
+        version: share.latest_version,
+        author: share.author,
+        homepage: share.homepage,
+        repository: share.repository,
+        keywords: share.keywords ? JSON.parse(share.keywords) : [],
+        tarballUrl: share.tarball_url || '',
+        size: share.size || 0,
+        checksum: share.checksumsha256 || '',
+        listed: false,
+        createdAt: share.created_at,
+        updatedAt: share.updated_at,
+      },
+    });
+  } catch (e) {
+    console.error('Password verify error:', e);
+    return c.json({ error: 'verify_failed', message: (e as Error).message }, 500);
+  }
+});
+
+// Get skill verification info (checksum, signature)
+skillsRouter.get('/:namespace/:name/verify', async (c) => {
+  const namespace = c.req.param('namespace');
+  const name = c.req.param('name');
+  const version = c.req.query('version');
+
+  try {
+    const skillStmt = await c.env.DB.prepare(
+      `SELECT s.id, s.latest_version, sv.version as v, sv.checksumsha256, sv.signature
+       FROM skills s
+       LEFT JOIN skill_versions sv ON s.id = sv.skill_id
+       WHERE s.namespace = ? AND s.name = ? AND (sv.version = ? OR ? IS NULL)
+       ORDER BY sv.created_at DESC
+       LIMIT 1`
+    );
+    const result = await skillStmt.bind(namespace, name, version, version).first();
+
+    if (!result) {
+      return c.json({ error: 'not_found', message: 'Skill not found' }, 404);
+    }
+
+    return c.json({
+      namespace,
+      name,
+      version: result.v || result.latest_version,
+      checksum: result.checksumsha256 || '',
+      signature: result.signature || null,
+      verified: !!result.signature,
+    });
+  } catch (e) {
+    return c.json({ error: 'verify_failed', message: (e as Error).message }, 500);
   }
 });
 
@@ -308,4 +529,30 @@ async function calculateChecksum(data: Uint8Array): Promise<string> {
 
 function hashKey(key: string): string {
   return key.slice(0, 32);
+}
+
+// Generate share token (base62, 8 chars, no lookalikes)
+function generateShareToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; // No 0, O, I, l
+  let token = '';
+  const array = new Uint8Array(8);
+  crypto.getRandomValues(array);
+  for (let i = 0; i < 8; i++) {
+    token += chars[array[i] % chars.length];
+  }
+  return token;
+}
+
+// Simple password hashing using SHA-256 (for production, use bcrypt)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const passwordHash = await hashPassword(password);
+  return passwordHash === hash;
 }

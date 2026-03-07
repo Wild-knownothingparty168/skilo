@@ -47,6 +47,7 @@ CREATE TABLE skill_versions (
   size INTEGER,
   checksumsha256 TEXT,
   signature TEXT,
+  public_key TEXT,
   yanked INTEGER DEFAULT 0,
   yanked_reason TEXT,
   metadata_json TEXT,
@@ -95,6 +96,9 @@ CREATE TABLE share_links (
   uses_count INTEGER DEFAULT 0,
   password_hash TEXT,
   created_by TEXT REFERENCES users(id),
+  notify_url TEXT,
+  opened_at INTEGER,
+  opened_by TEXT,
   created_at INTEGER DEFAULT (unixepoch())
 );
 

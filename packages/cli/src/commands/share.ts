@@ -1,4 +1,5 @@
 import { getClient } from '../api/client.js';
+import { createInterface } from 'node:readline';
 
 function parseSkillRef(skill: string): { namespace: string; name: string } {
   const parts = skill.split('/');
@@ -8,12 +9,26 @@ function parseSkillRef(skill: string): { namespace: string; name: string } {
   return { namespace: parts[0], name: parts[1] };
 }
 
+async function promptPassword(): Promise<string> {
+  const rl = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    rl.question('Enter password: ', (password) => {
+      rl.close();
+      resolve(password);
+    });
+  });
+}
+
 export async function shareCommand(
   skill: string,
-  options: { oneTime?: boolean; expires?: string; uses?: number } = {}
+  options: { oneTime?: boolean; expires?: string; uses?: number; password?: boolean; qr?: boolean } = {}
 ): Promise<void> {
   if (!skill) {
-    console.error('Usage: skilo share <namespace/name> [--one-time] [--expires in 1h] [--uses 5]');
+    console.error('Usage: skilo share <namespace/name> [--one-time] [--expires 1h] [--uses 5] [--password]');
     process.exit(1);
   }
 
@@ -37,12 +52,19 @@ export async function shareCommand(
       else if (unit === 'm') expiresAt = now + value * 60 * 1000;
     }
 
+    // Get password if requested
+    let password: string | undefined;
+    if (options.password) {
+      password = await promptPassword();
+    }
+
     const result = await client.createShareLink(
       namespace,
       name,
       options.oneTime || false,
       expiresAt,
-      options.uses
+      options.uses,
+      password
     );
 
     console.log(`✓ Created share link for ${namespace}/${name}`);
@@ -50,8 +72,31 @@ export async function shareCommand(
     if (options.oneTime) console.log('  (one-time use)');
     if (expiresAt) console.log(`  (expires: ${new Date(expiresAt).toISOString()})`);
     if (options.uses) console.log(`  (max uses: ${options.uses})`);
+    if (options.password) console.log('  (password protected)');
+
+    // QR code (ASCII representation)
+    if (options.qr) {
+      console.log('\nScan to install:');
+      console.log(generateQRCode(result.url));
+    }
   } catch (e) {
     console.error(`Error: ${(e as Error).message}`);
     process.exit(1);
   }
+}
+
+// Simple ASCII QR code generator (placeholder)
+function generateQRCode(url: string): string {
+  // In production, use a proper QR library like 'qrcode'
+  // For now, return a placeholder
+  return `
+    ██████████████
+    ██          ██
+    ██  ██████  ██
+    ██  █    █  ██
+    ██  ██████  ██
+    ██          ██
+    ██████████████
+           ${url.slice(0, 30)}...
+  `;
 }

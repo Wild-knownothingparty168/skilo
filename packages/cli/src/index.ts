@@ -20,6 +20,9 @@ import { lockCommand, verifyLockCommand } from './commands/lock.js';
 import { auditCommand } from './commands/audit.js';
 import { syncCommand } from './commands/sync.js';
 import { claimCommand } from './commands/claim.js';
+import { exportCommand } from './commands/export.js';
+import { importCommand } from './commands/import.js';
+import { inspectCommand } from './commands/inspect.js';
 
 const program = new Command();
 
@@ -42,7 +45,7 @@ program.command('list').description('List installed skills').action(listCommand)
 // Package management
 program
   .command('add <skill>')
-  .description('Add a skill')
+  .description('Add a skill (alias for install)')
   .option('-g, --global', 'Install globally')
   .action((skill, options) => installCommand(skill, options));
 program
@@ -52,8 +55,25 @@ program
   .action((skill, options) => installCommand(skill, options));
 program.command('update <skill>').description('Update a skill').action(updateCommand);
 
+// Import/Export
+program
+  .command('import <source>')
+  .description('Import from GitHub, .skl, URL, or local path')
+  .option('-g, --global', 'Install globally')
+  .action(importCommand);
+program
+  .command('export [path]')
+  .description('Export skill to .skl file')
+  .option('-o, --output <file>', 'Output file path')
+  .action(exportCommand);
+program.command('inspect <skill>').description('Inspect skill without installing').action(inspectCommand);
+
 // Publishing
-program.command('publish [path]').description('Publish skill (default: .)').action(publishCommand);
+program
+  .command('publish [path]')
+  .description('Publish skill (default: .)')
+  .option('--sign', 'Sign the skill bundle')
+  .action(publishCommand);
 program.command('unpublish <skill>').description('Remove a skill').action((s) => {
   console.log('Use: skilo yank namespace/name@version to remove specific versions');
 });
@@ -82,6 +102,7 @@ program
   .option('--one-time', 'One-time use link')
   .option('--expires <time>', 'Expires in (e.g., 1h, 2d)')
   .option('--uses <n>', 'Max uses')
+  .option('--password', 'Password protect')
   .action(shareCommand);
 
 // Trust & Ops

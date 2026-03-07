@@ -23,7 +23,7 @@ const fetchWithRetry = fetchRetry(fetch, {
 });
 
 export class ApiClient {
-  private baseUrl: string;
+  baseUrl: string;
   private token?: string;
 
   constructor(config: ClientConfig) {
@@ -101,7 +101,9 @@ export class ApiClient {
     version: string,
     tarball: ArrayBuffer,
     isListed: boolean = false,
-    claimToken?: string
+    claimToken?: string,
+    signature?: string,
+    publicKey?: string
   ): Promise<{ id: string }> {
     const url = `${this.baseUrl}/v1/skills`;
 
@@ -113,6 +115,12 @@ export class ApiClient {
     formData.append('listed', isListed.toString());
     if (claimToken) {
       formData.append('claim_token', claimToken);
+    }
+    if (signature) {
+      formData.append('signature', signature);
+    }
+    if (publicKey) {
+      formData.append('public_key', publicKey);
     }
     formData.append('tarball', new Blob([tarball]));
 
@@ -208,13 +216,19 @@ export class ApiClient {
     name: string,
     oneTime: boolean,
     expiresAt?: number,
-    maxUses?: number
+    maxUses?: number,
+    password?: string
   ): Promise<{ url: string }> {
     const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/share`;
     const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ one_time: oneTime, expires_at: expiresAt, max_uses: maxUses }),
+      body: JSON.stringify({
+        one_time: oneTime,
+        expires_at: expiresAt,
+        max_uses: maxUses,
+        password,
+      }),
     });
 
     if (!res.ok) {
