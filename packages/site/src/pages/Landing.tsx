@@ -64,14 +64,20 @@ function Landing() {
       {/* Demo */}
       <section id="get-started" className="py-16 px-6 bg-gray-50 dark:bg-gray-900/50">
         <div className="max-w-3xl mx-auto">
+          <div className="mb-8">
+            <CodeBlock
+              code="npm install -g skilo-cli"
+              language="bash"
+            />
+          </div>
           <div className="space-y-4">
             <CodeBlock
-              code="npx skilo share ./my-skill"
+              code="skilo share ./my-skill"
               output="🔗 skilo.xyz/s/a3xK9mP2"
             />
             <CodeBlock
-              code="npx skilo add https://skilo.xyz/s/a3xK9mP2"
-              output="✓ Installed @namespace/skill-name"
+              code="skilo add https://skilo.xyz/s/a3xK9mP2"
+              output="✓ Installed @anonymous/skill-name"
             />
           </div>
         </div>
