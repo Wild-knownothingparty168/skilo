@@ -18,7 +18,8 @@ const commits = raw
   .map((line) => {
     const [hash, datetime, ...rest] = line.split("|");
     return { hash, date: datetime.split(" ")[0], msg: rest.join("|") };
-  });
+  })
+  .filter(({ msg }) => !/^Update generated changelog$/i.test(msg));
 
 // Group by date, newest first
 const byDate = new Map();
