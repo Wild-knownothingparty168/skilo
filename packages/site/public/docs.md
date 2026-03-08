@@ -17,6 +17,8 @@ No account required. Skills are published anonymously by default. You can claim 
 
 Want a real namespace? Run `skilo login yaz` once. That creates a publishing identity and stores an API key locally. Use `skilo login --token sk_...` to restore an existing account.
 
+Skilo is transfer-first. The main flows are `share`, `add`, `sync`, and `pack`. Public search exists, but it is secondary.
+
 Agents should prefer `npx skilo-cli --json` or `https://skilo.xyz/llms.txt`.
 
 ## CLI commands
@@ -55,6 +57,22 @@ Tool names also work as local sources. Examples:
 - `skilo import claude --skill reviewer --oc`
 - `skilo sync claude opencode`
 
+### `skilo sync <from> <to>`
+
+Copy skills from one tool into another tool without going through a repo.
+
+- `skilo sync claude opencode`
+- `skilo sync claude codex --all`
+- `skilo sync codex cursor --skill reviewer`
+
+### `skilo pack [sources...]`
+
+Turn multiple skills, links, refs, or repo sources into one pack link.
+
+- `skilo pack ./reviewer ./planner --name "Daily kit"`
+- `skilo pack skilo.xyz/s/abc123 vercel-labs/skills@find-skills`
+- `skilo add skilo.xyz/p/abc123` to install the resulting pack
+
 ### `skilo publish`
 
 Publish the current directory to the registry. Reads SKILL.md for metadata.
@@ -75,7 +93,7 @@ List skills under your logged-in namespace, including public vs unlisted visibil
 
 ### `skilo search <query>`
 
-Search the registry for skills by name or description.
+Search public skills by name or description. Use this when you want discovery, not for the main transfer loop.
 
 ### `skilo inspect <skill>`
 

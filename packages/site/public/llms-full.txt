@@ -1,8 +1,8 @@
 # Skilo
 
-> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
+> Share agent skills with a link. Add, sync, and pack them across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
 
-Skilo is a CLI and registry for sharing agent skills. Skills are directories containing a SKILL.md file with YAML frontmatter and markdown instructions. The CLI publishes skills to the registry and generates shareable links. Recipients install with one command. No account required, but `skilo login <username>` gives you a durable namespace.
+Skilo is a transfer-first CLI and handoff layer for agent skills. Skills are directories containing a `SKILL.md` file with markdown instructions and optional YAML frontmatter. The main job is simple: share a skill, install it somewhere else, sync between tools, or make a pack. Public discovery exists, but it is secondary.
 
 ## Quick start
 
@@ -19,6 +19,8 @@ No account required. Skills are published anonymously by default. You can claim 
 
 For humans, every `npx skilo-cli ...` run refreshes the global `skilo` binary in the background, and the installed `skilo` command keeps itself updated too.
 For agents, prefer `npx skilo-cli --json` and parse the structured output.
+
+Skilo is transfer-first. The main flows are `share`, `add`, `sync`, and `pack`. Public search exists, but it is secondary.
 
 ## CLI commands
 
@@ -63,6 +65,22 @@ Install targets (flags):
 - `--roo` → `~/.roo/skills/`
 - `--openclaw` → `~/.openclaw/skills/`
 
+### `skilo sync <from> <to>`
+
+Copy skills from one tool into another tool without going through a repo.
+
+- `skilo sync claude opencode`
+- `skilo sync claude codex --all`
+- `skilo sync codex cursor --skill reviewer`
+
+### `skilo pack [sources...]`
+
+Turn multiple skills, links, refs, or repo sources into one pack link.
+
+- `skilo pack ./reviewer ./planner --name "Daily kit"`
+- `skilo pack skilo.xyz/s/abc123 vercel-labs/skills@find-skills`
+- `skilo add skilo.xyz/p/abc123` to install the resulting pack
+
 ### `skilo publish`
 
 Publish the current directory to the registry. Reads SKILL.md for metadata.
@@ -83,7 +101,7 @@ List skills under your logged-in namespace, including public vs unlisted visibil
 
 ### `skilo search <query>`
 
-Search the registry for skills by name or description.
+Search public skills by name or description. Use this when you want discovery, not for the main transfer loop.
 
 ### `skilo inspect <skill>`
 

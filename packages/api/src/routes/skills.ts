@@ -4,6 +4,7 @@ import { rateLimiters } from '../middleware/rateLimit.js';
 import {
   analyzeSkillTarball,
   buildTrustInfo,
+  extractSkillContentFromTarball,
   parseVersionMetadata,
   type PublisherStatus,
 } from '../utils/trust.js';
@@ -42,6 +43,7 @@ type ShareRow = {
   latest_version: string;
   created_at: number;
   updated_at: number;
+  tarball_url: string | null;
   size: number | null;
   checksumsha256: string | null;
   metadata_json: string | null;
@@ -55,6 +57,110 @@ function isPublicSkill(privacy: unknown): boolean {
 
 function buildTarballUrl(namespace: string, name: string, version: string): string {
   return `/v1/skills/${namespace}/${name}/tarball/${version}`;
+}
+
+function buildShareTarballUrl(token: string): string {
+  return `/v1/skills/share/${token}/tarball`;
+}
+
+function buildShareContentUrl(token: string): string {
+  return `/v1/skills/share/${token}/content`;
+}
+
+function isShareExhausted(share: Pick<ShareRow, 'one_time' | 'max_uses' | 'uses_count'>): boolean {
+  if (share.one_time && share.uses_count >= 1) {
+    return true;
+  }
+
+  return Boolean(share.max_uses && share.uses_count >= share.max_uses);
+}
+
+async function getShareRecord(db: D1Database, token: string): Promise<ShareRow | null> {
+  const shareStmt = await db.prepare(
+    `SELECT sl.*, s.name, s.namespace, s.description, s.latest_version,
+            s.created_at, s.updated_at, sv.tarball_url, sv.size,
+            sv.checksumsha256, sv.metadata_json, sv.signature, s.privacy
+     FROM share_links sl
+     JOIN skills s ON sl.skill_id = s.id
+     LEFT JOIN skill_versions sv ON s.id = sv.skill_id AND sv.version = s.latest_version
+     WHERE sl.token = ?`
+  );
+  return shareStmt.bind(token).first<ShareRow>();
+}
+
+function buildSharePayload(share: ShareRow) {
+  const metadata = parseVersionMetadata(share.metadata_json);
+  const trust = buildTrustInfo({
+    signature: share.signature,
+    privacy: share.privacy,
+    checksum: share.checksumsha256,
+    metadataJson: share.metadata_json,
+    sourceType: 'share',
+  });
+
+  return {
+    skill: {
+      name: share.name,
+      namespace: share.namespace,
+      description: share.description,
+      version: share.latest_version,
+      author: metadata.author,
+      homepage: metadata.homepage,
+      repository: metadata.repository,
+      keywords: metadata.keywords,
+      tarballUrl: buildShareTarballUrl(share.token),
+      contentUrl: buildShareContentUrl(share.token),
+      size: share.size || 0,
+      checksum: share.checksumsha256 || '',
+      listed: false,
+      verified: trust.verified,
+      trust,
+      createdAt: share.created_at,
+      updatedAt: share.updated_at,
+    },
+    link: {
+      token: share.token,
+      oneTime: Boolean(share.one_time),
+      expiresAt: share.expires_at ? share.expires_at * 1000 : null,
+      maxUses: share.max_uses || null,
+      usesCount: share.uses_count || 0,
+      passwordProtected: Boolean(share.password_hash),
+    },
+    trust,
+  };
+}
+
+function getSharePassword(c: any): string | null {
+  const header = c.req.header('X-Skilo-Share-Password');
+  if (header && header.trim()) {
+    return header.trim();
+  }
+
+  const query = c.req.query('password');
+  return query && query.trim() ? query.trim() : null;
+}
+
+async function ensureShareAccess(share: ShareRow, password?: string | null): Promise<Response | null> {
+  if (share.expires_at && share.expires_at < Math.floor(Date.now() / 1000)) {
+    return Response.json({ error: 'expired', message: 'Share link has expired' }, { status: 410 });
+  }
+
+  if (isShareExhausted(share)) {
+    return Response.json({ error: 'exhausted', message: 'Share link has reached max uses' }, { status: 410 });
+  }
+
+  if (share.password_hash) {
+    if (!password) {
+      return Response.json({ error: 'unauthorized', message: 'Password required' }, { status: 401 });
+    }
+
+    const passwordValid = await verifyPassword(password, share.password_hash);
+    if (!passwordValid) {
+      return Response.json({ error: 'unauthorized', message: 'Invalid password' }, { status: 401 });
+    }
+  }
+
+  return null;
 }
 
 // List/search skills - only public skills
@@ -280,19 +386,10 @@ skillsRouter.post('/:namespace/:name/share', rateLimiters.createShare, async (c)
 
 // Resolve share link - rate limited
 skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
-  const token = c.req.param('token');
+  const token = c.req.param('token') || '';
 
   try {
-    const shareStmt = await c.env.DB.prepare(
-      `SELECT sl.*, s.name, s.namespace, s.description, s.latest_version,
-              s.created_at, s.updated_at, sv.tarball_url, sv.size,
-              sv.checksumsha256, sv.metadata_json, sv.signature, s.privacy
-       FROM share_links sl
-       JOIN skills s ON sl.skill_id = s.id
-       LEFT JOIN skill_versions sv ON s.id = sv.skill_id AND sv.version = s.latest_version
-       WHERE sl.token = ?`
-    );
-    const share = await shareStmt.bind(token).first<ShareRow>();
+    const share = await getShareRecord(c.env.DB, token);
 
     if (!share) {
       // Fallback: check KV for ref-links (skilo.xyz/s/ for arbitrary refs)
@@ -307,7 +404,7 @@ skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
       return c.json({ error: 'expired', message: 'Share link has expired' }, 410);
     }
 
-    if (share.max_uses && share.uses_count >= share.max_uses) {
+    if (isShareExhausted(share)) {
       return c.json({ error: 'exhausted', message: 'Share link has reached max uses' }, 410);
     }
 
@@ -318,53 +415,8 @@ skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
       });
     }
 
-    await c.env.DB.prepare(
-      `UPDATE share_links SET uses_count = uses_count + 1, opened_at = unixepoch() WHERE id = ?`
-    ).bind(share.id).run();
-
-    if (share.one_time) {
-      await c.env.DB.prepare(
-        `UPDATE share_links SET max_uses = 1, uses_count = 1 WHERE id = ?`
-      ).bind(share.id).run();
-    }
-
-    const metadata = parseVersionMetadata(share.metadata_json);
-    const trust = buildTrustInfo({
-      signature: share.signature,
-      privacy: share.privacy,
-      checksum: share.checksumsha256,
-      metadataJson: share.metadata_json,
-      sourceType: 'share',
-    });
-
     return c.json({
-      skill: {
-        name: share.name,
-        namespace: share.namespace,
-        description: share.description,
-        version: share.latest_version,
-        author: metadata.author,
-        homepage: metadata.homepage,
-        repository: metadata.repository,
-        keywords: metadata.keywords,
-        tarballUrl: buildTarballUrl(share.namespace, share.name, share.latest_version),
-        size: share.size || 0,
-        checksum: share.checksumsha256 || '',
-        listed: false,
-        verified: trust.verified,
-        trust,
-        createdAt: share.created_at,
-        updatedAt: share.updated_at,
-      },
-      link: {
-        token: share.token,
-        oneTime: Boolean(share.one_time),
-        expiresAt: share.expires_at ? share.expires_at * 1000 : null,
-        maxUses: share.max_uses || null,
-        usesCount: share.uses_count || 0,
-        passwordProtected: Boolean(share.password_hash),
-      },
-      trust,
+      ...buildSharePayload(share),
       requiresPassword: false,
     });
   } catch (e) {
@@ -375,7 +427,7 @@ skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
 
 // Verify share password
 skillsRouter.post('/share/:token/verify', async (c) => {
-  const token = c.req.param('token');
+  const token = c.req.param('token') || '';
   const body = await c.req.json<Record<string, unknown>>();
   const password = typeof body.password === 'string' ? body.password : '';
 
@@ -384,71 +436,94 @@ skillsRouter.post('/share/:token/verify', async (c) => {
   }
 
   try {
-    const shareStmt = await c.env.DB.prepare(
-      `SELECT sl.*, s.name, s.namespace, s.description, s.latest_version,
-              s.created_at, s.updated_at, sv.tarball_url, sv.size,
-              sv.checksumsha256, sv.metadata_json, sv.signature, s.privacy
-       FROM share_links sl
-       JOIN skills s ON sl.skill_id = s.id
-       LEFT JOIN skill_versions sv ON s.id = sv.skill_id AND sv.version = s.latest_version
-       WHERE sl.token = ?`
-    );
-    const share = await shareStmt.bind(token).first<ShareRow>();
+    const share = await getShareRecord(c.env.DB, token);
 
     if (!share) {
       return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
     }
 
-    const passwordValid = await verifyPassword(password, share.password_hash || '');
-    if (!passwordValid) {
-      return c.json({ error: 'unauthorized', message: 'Invalid password' }, 401);
+    const accessError = await ensureShareAccess(share, password);
+    if (accessError) {
+      return accessError;
+    }
+
+    return c.json(buildSharePayload(share));
+  } catch (e) {
+    console.error('Password verify error:', e);
+    return c.json({ error: 'verify_failed', message: (e as Error).message }, 500);
+  }
+});
+
+skillsRouter.get('/share/:token/content', rateLimiters.resolveShare, async (c) => {
+  const token = c.req.param('token') || '';
+
+  try {
+    const share = await getShareRecord(c.env.DB, token);
+    if (!share) {
+      return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
+    }
+
+    const accessError = await ensureShareAccess(share, getSharePassword(c));
+    if (accessError) {
+      return accessError;
+    }
+
+    const object = await c.env.SKILLPACK_BUCKET.get(share.tarball_url || '');
+    if (!object) {
+      return c.json({ error: 'not_found', message: 'Tarball not found' }, 404);
+    }
+
+    const content = await extractSkillContentFromTarball(new Uint8Array(await object.arrayBuffer()));
+    if (!content) {
+      return c.json({ error: 'not_found', message: 'SKILL.md not found in tarball' }, 404);
+    }
+
+    return new Response(content, {
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Cache-Control': 'private, no-store',
+      },
+    });
+  } catch (e) {
+    console.error('Share content error:', e);
+    return c.json({ error: 'content_failed', message: (e as Error).message }, 500);
+  }
+});
+
+skillsRouter.get('/share/:token/tarball', rateLimiters.resolveShare, async (c) => {
+  const token = c.req.param('token') || '';
+
+  try {
+    const share = await getShareRecord(c.env.DB, token);
+    if (!share) {
+      return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
+    }
+
+    const accessError = await ensureShareAccess(share, getSharePassword(c));
+    if (accessError) {
+      return accessError;
+    }
+
+    const object = await c.env.SKILLPACK_BUCKET.get(share.tarball_url || '');
+    if (!object) {
+      return c.json({ error: 'not_found', message: 'Tarball not found' }, 404);
     }
 
     await c.env.DB.prepare(
       `UPDATE share_links SET uses_count = uses_count + 1, opened_at = unixepoch() WHERE id = ?`
     ).bind(share.id).run();
 
-    const metadata = parseVersionMetadata(share.metadata_json);
-    const trust = buildTrustInfo({
-      signature: share.signature,
-      privacy: share.privacy,
-      checksum: share.checksumsha256,
-      metadataJson: share.metadata_json,
-      sourceType: 'share',
-    });
-
-    return c.json({
-      skill: {
-        name: share.name,
-        namespace: share.namespace,
-        description: share.description,
-        version: share.latest_version,
-        author: metadata.author,
-        homepage: metadata.homepage,
-        repository: metadata.repository,
-        keywords: metadata.keywords,
-        tarballUrl: buildTarballUrl(share.namespace, share.name, share.latest_version),
-        size: share.size || 0,
-        checksum: share.checksumsha256 || '',
-        listed: false,
-        verified: trust.verified,
-        trust,
-        createdAt: share.created_at,
-        updatedAt: share.updated_at,
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': 'application/gzip',
+        'Content-Length': String(share.size || 0),
+        'Content-Disposition': `attachment; filename="${share.name}-${share.latest_version}.tgz"`,
+        'Cache-Control': 'private, no-store',
       },
-      link: {
-        token: share.token,
-        oneTime: Boolean(share.one_time),
-        expiresAt: share.expires_at ? share.expires_at * 1000 : null,
-        maxUses: share.max_uses || null,
-        usesCount: share.uses_count || 0,
-        passwordProtected: Boolean(share.password_hash),
-      },
-      trust,
     });
   } catch (e) {
-    console.error('Password verify error:', e);
-    return c.json({ error: 'verify_failed', message: (e as Error).message }, 500);
+    console.error('Share tarball error:', e);
+    return c.json({ error: 'download_failed', message: (e as Error).message }, 500);
   }
 });
 

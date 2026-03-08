@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { mkdtemp } from 'node:fs/promises';
 import * as tar from 'tar';
 import { getClient } from '../api/client.js';
+import { parseSkillManifest } from '../manifest.js';
 import type { PackData, PackSkill } from '../types.js';
 import { isRegistrySkillRef, normalizeSourceInput } from '../utils/source-kind.js';
 import { findSkillFile } from '../utils/skill-file.js';
@@ -862,7 +863,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.25',
+      'User-Agent': 'skilo-cli/1.0.26',
     },
   });
 
@@ -928,7 +929,8 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
     throw new Error('Invalid or expired share link');
   }
 
-  const data = await response.json();
+  let data = await response.json();
+  let password: string | undefined;
 
   if (data.trust?.auditStatus === 'blocked') {
     throw new Error(data.trust.riskSummary?.[0] || 'Share link install blocked');
@@ -939,7 +941,7 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
 
   if (data.requiresPassword) {
     // Prompt for password
-    const password = await promptPassword();
+    password = await promptPassword();
     const verifyResponse = await fetch(`${client.baseUrl}/v1/skills/share/${token}/verify`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -949,6 +951,8 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
     if (!verifyResponse.ok) {
       throw new Error('Invalid password');
     }
+
+    data = await verifyResponse.json();
   }
 
   // Download tarball
@@ -960,7 +964,9 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
   }
 
   const downloadUrl = tarballUrl.startsWith('http') ? tarballUrl : `${client.baseUrl}${tarballUrl}`;
-  const tarballResponse = await fetch(downloadUrl);
+  const tarballResponse = await fetch(downloadUrl, {
+    headers: password ? { 'X-Skilo-Share-Password': password } : undefined,
+  });
   if (!tarballResponse.ok) {
     throw new Error('Failed to download skill');
   }
@@ -1110,8 +1116,9 @@ export async function installSkill(
   }
 
   const skillMd = await readFile(join(skillPath, skillFile), 'utf-8');
-  const nameMatch = skillMd.match(/#\s*(.+)/);
-  const name = nameMatch ? nameMatch[1].trim() : basename(skillPath);
+  const parsed = parseSkillManifest(skillMd);
+  const name = parsed.manifest.name?.trim() || basename(skillPath);
+  const dirName = toInstalledDirName(name, basename(skillPath));
   const installDirs = getInstallDirs(installResolution.targets, options);
   const destinations = getInstallDestinations(installResolution.targets, options);
   const installedDirs: string[] = [];
@@ -1119,7 +1126,7 @@ export async function installSkill(
   for (const skillsDir of installDirs) {
     await mkdir(skillsDir, { recursive: true });
 
-    const targetDir = join(skillsDir, name.replace(/\//g, '-'));
+    const targetDir = join(skillsDir, dirName);
     await rm(targetDir, { recursive: true, force: true });
     await mkdir(targetDir, { recursive: true });
     await cp(skillPath, targetDir, { recursive: true });
@@ -1147,6 +1154,24 @@ export async function installSkill(
     })),
     installedDirs,
   };
+}
+
+function toInstalledDirName(name: string, fallback: string): string {
+  const normalized = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  if (normalized) {
+    return normalized;
+  }
+
+  return fallback
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'skill';
 }
 
 async function promptPassword(): Promise<string> {

@@ -203,7 +203,7 @@ function Landing() {
         Share agent skills with a link
       </h1>
       <p className="mt-2 text-[15px] leading-relaxed text-stone-500">
-        Pack skills from any tool, share one link. No repo, no account.
+        Paste one skill, link, repo, or several lines to make a pack. Install anywhere in one command.
       </p>
 
       {!packResult ? (
@@ -213,7 +213,7 @@ function Landing() {
             value={input}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Paste skills to pack and share"
+            placeholder="Paste a skill, link, repo, or one per line to make a pack"
             className="w-full resize-none overflow-hidden rounded-lg border border-stone-200 bg-white px-4 py-3 text-[15px] leading-relaxed outline-none transition-colors placeholder:text-stone-400 focus:border-stone-400"
             autoComplete="off"
             autoFocus
@@ -222,7 +222,7 @@ function Landing() {
           />
 
           {resolved.length === 0 && (
-            <p className="text-xs text-stone-300">One per line to create a pack</p>
+            <p className="text-xs text-stone-300">One input copies the install command. Several lines make one pack link.</p>
           )}
 
           {single && single.nav && (

@@ -1,25 +1,26 @@
 # Skilo
 
-> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
+> Share agent skills with a link. Add, sync, and pack them across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
 
-Skilo is a CLI and registry for sharing agent skills. Skills are directories containing a SKILL.md file with YAML frontmatter and markdown instructions. The CLI publishes skills to the registry and generates shareable links. Recipients install with one command. No account required, but `skilo login <username>` gives you a durable namespace.
+Skilo is a transfer-first CLI and handoff layer for agent skills. Skills are directories containing a `SKILL.md` file with markdown instructions and optional YAML frontmatter. The main job is simple: share a skill, install it somewhere else, sync between tools, or make a pack. Public discovery exists, but it is secondary.
 
 ## Start Here
 
 If you are an agent and need to decide what to do:
 
 1. Run `npx skilo-cli --json` for the shortest machine-readable starter.
-2. Use `skilo add <source>` to install, `skilo inspect <source>` to review, and `skilo share <path>` to publish.
+2. Use `skilo share <path|tool>` to send skills, `skilo add <source>` to install, `skilo sync <from> <to>` to copy between tools, and `skilo pack ...` to make one link from many skills.
 3. Prefer `--json` on CLI commands when you need structured output.
 
 - Human bootstrap: `npx skilo-cli` (every run refreshes the global `skilo` binary in the background)
 - Agent bootstrap: `npx skilo-cli --json`
 - Login: `skilo login <username>` or `skilo login --token sk_...`
 - Share a skill: `skilo share ./my-skill` → returns a link
+- Share a whole tool: `skilo share claude` → returns a pack when multiple skills are selected
 - Share defaults to unlisted for local sources; pass `--listed` to make the skill searchable too
 - Install a skill: `skilo add skilo.xyz/s/<token>` → downloads, verifies, installs
+- Sync tools: `skilo sync claude opencode`
 - Create a pack: `skilo pack ./reviewer namespace/design-system --name "Starter pack"` → returns a pack link
-- Bulk share: `skilo share claude` → shares all skills from a tool at once
 - List your published skills: `skilo list --published`
 
 ## Common Inputs

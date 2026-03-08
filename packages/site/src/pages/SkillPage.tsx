@@ -16,6 +16,7 @@ function SkillPage() {
   const [trust, setTrust] = useState<SkillMetadata["trust"] | null>(null);
   const [refLink, setRefLink] = useState<{ ref: string; token: string } | null>(null);
   const [password, setPassword] = useState("");
+  const [verifiedPassword, setVerifiedPassword] = useState<string | null>(null);
   const [requiresPassword, setRequiresPassword] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,7 @@ function SkillPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
+    setVerifiedPassword(null);
     if (!token) {
       setError("Invalid share link");
       setLoading(false);
@@ -51,14 +53,15 @@ function SkillPage() {
   }, [token]);
 
   useEffect(() => {
-    if (!skill) return;
+    if (!skill || !token) return;
     setContentLoading(true);
+    setContentError(null);
     api
-      .fetchSkillContent(skill.tarballUrl)
+      .fetchShareSkillContent(token, verifiedPassword || undefined)
       .then(setSkillContent)
       .catch(() => setContentError("Could not load SKILL.md"))
       .finally(() => setContentLoading(false));
-  }, [skill]);
+  }, [skill, token, verifiedPassword]);
 
   const handleVerifyPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +74,7 @@ function SkillPage() {
       setSkill(verified.skill);
       setLinkInfo(verified.link || null);
       setTrust(verified.trust || verified.skill.trust || null);
+      setVerifiedPassword(password);
       setRequiresPassword(false);
       setPassword("");
     } catch (err) {

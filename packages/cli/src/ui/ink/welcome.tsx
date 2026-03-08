@@ -19,24 +19,25 @@ function WelcomeScreen() {
       <Text bold color="cyanBright">
         Skilo
       </Text>
-      <Text bold>Share agent skills with a link. No repo required.</Text>
+      <Text bold>Share, install, sync, and pack agent skills without repo setup.</Text>
       <Box marginTop={1} borderStyle="round" borderColor="cyan" paddingX={1} paddingY={0} flexDirection="column">
         <Text bold color="white">
-          Start
+          Start here
         </Text>
-        <Text color="gray">Share, add, pack, or sync in one line.</Text>
+        <Text color="gray">Use one of these four flows. Everything else is secondary.</Text>
         <Box marginTop={1} flexDirection="column">
+          <Text color="green">skilo share claude</Text>
           <Text color="green">skilo share ./my-skill</Text>
           <Text color="green">skilo add https://skilo.xyz/s/abc123</Text>
-          <Text color="green">skilo pack ./reviewer namespace/design-system</Text>
           <Text color="green">skilo sync claude opencode</Text>
+          <Text color="green">skilo pack ./reviewer namespace/design-system</Text>
         </Box>
       </Box>
       <Box marginTop={1} borderStyle="round" borderColor="gray" paddingX={1} paddingY={0} flexDirection="column">
         <Text bold color="white">
           Inputs
         </Text>
-        <Text color="gray">links, packs, refs, repos, bundles, local tools</Text>
+        <Text color="gray">links, packs, refs, repos, bundles, or local tool sources</Text>
         <Box marginTop={1} flexDirection="column">
           <Text bold color="white">
             Agent entrypoints

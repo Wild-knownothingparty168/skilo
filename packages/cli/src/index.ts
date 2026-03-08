@@ -51,17 +51,18 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Share agent skills with a link. No repo required.')
-  .version('1.0.25');
+  .version('1.0.26');
 program.option('--json', 'Emit machine-readable JSON');
 
 program.showSuggestionAfterError(true);
 program.showHelpAfterError('\nRun "skilo --help" for usage.');
 program.addHelpText('after', `
 Primary commands:
+  skilo share claude
   skilo share ./my-skill
   skilo add https://skilo.xyz/s/abc123
-  skilo pack ./skill-a namespace/skill-b https://skilo.xyz/s/abc123 --name "Starter pack"
   skilo sync claude opencode
+  skilo pack ./skill-a namespace/skill-b https://skilo.xyz/s/abc123 --name "Starter pack"
 
 Agent entrypoints:
   skilo --json
@@ -85,7 +86,7 @@ program.command('logout').description('Clear saved authentication').action(logou
 program.command('whoami').description('Show current user').action(whoamiCommand);
 
 // Discovery
-program.command('search <query>').description('Search skills').action(searchCommand);
+program.command('search <query>').description('Search public skills').action(searchCommand);
 program.command('info <skill>').description('Show skill info').action(infoCommand);
 program.command('cat <skill>').description('View skill before installing').action(catCommand);
 program
@@ -192,21 +193,30 @@ program
 function printMachineWelcome(): void {
   printJson({
     name: 'skilo-cli',
-    purpose: 'Share agent skills with a link. No repo required.',
+    purpose: 'Share, install, sync, and pack agent skills without repo setup.',
     docs: 'https://skilo.xyz/docs',
     llms: 'https://skilo.xyz/llms.txt',
     website: 'https://skilo.xyz',
     help: 'skilo --help',
     primaryCommands: {
+      shareTool: 'skilo share claude',
       shareLocal: 'skilo share ./my-skill',
       addLink: 'skilo add https://skilo.xyz/s/abc123',
       addPack: 'skilo add https://skilo.xyz/p/abc123',
-      pack: 'skilo pack ./reviewer namespace/design-system --name "Starter pack"',
       syncTools: 'skilo sync claude opencode',
+      pack: 'skilo pack ./reviewer namespace/design-system --name "Starter pack"',
     },
-    compatibilityAliases: {
-      install: 'skilo install <source>',
-      import: 'skilo import <source>',
+    workflow: [
+      'share one skill',
+      'share many skills as a pack',
+      'install from a link, ref, or repo',
+      'sync skills between tools',
+    ],
+    advancedCommands: {
+      inspect: 'skilo inspect <source>',
+      search: 'skilo search <query>',
+      publish: 'skilo publish --listed',
+      login: 'skilo login <username>',
     },
     acceptedInputs: [
       'share-link',

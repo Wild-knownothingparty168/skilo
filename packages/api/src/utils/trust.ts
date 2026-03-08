@@ -285,6 +285,11 @@ async function parseTarGzip(buffer: Uint8Array): Promise<ParsedBundle> {
   return { entries, skillFile, packageJson };
 }
 
+export async function extractSkillContentFromTarball(buffer: Uint8Array): Promise<string | null> {
+  const parsed = await parseTarGzip(buffer);
+  return parsed.skillFile?.content || null;
+}
+
 export async function analyzeSkillTarball(
   buffer: Uint8Array,
   publisherStatus: PublisherStatus,

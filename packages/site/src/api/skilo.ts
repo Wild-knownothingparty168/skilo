@@ -12,6 +12,7 @@ export interface SkillMetadata {
   repository: string | null;
   keywords: string[];
   tarballUrl: string;
+  contentUrl?: string;
   size: number;
   checksum: string;
   listed: boolean;
@@ -236,6 +237,14 @@ export const api = {
     }
 
     throw new Error('SKILL.md not found in tarball');
+  },
+
+  async fetchShareSkillContent(token: string, password?: string): Promise<string> {
+    const res = await fetch(`${API_BASE}/v1/skills/share/${token}/content`, {
+      headers: password ? { 'X-Skilo-Share-Password': password } : undefined,
+    });
+    if (!res.ok) throw new Error('Failed to fetch skill content');
+    return res.text();
   },
 
   async verifySharePassword(token: string, password: string): Promise<{ skill: SkillMetadata; link?: ShareLinkInfo; trust?: SkillMetadata['trust'] }> {
