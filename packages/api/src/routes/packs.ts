@@ -1,11 +1,11 @@
 // Packs API routes - bulk share collections
 import { Hono } from 'hono';
-import type { Env } from '../index.js';
+import type { ApiBindings, ApiEnv } from '../env.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
 import { aggregatePackTrust, analyzeSkillTarball, buildTrustInfo, needsAuditRefresh, parseVersionMetadata, type PublisherStatus } from '../utils/trust.js';
 import { resolveCatalogEntry } from '../utils/catalog.js';
 
-export const packsRouter = new Hono<{ Bindings: Env }>();
+export const packsRouter = new Hono<ApiEnv>();
 
 interface ShareLookupRow {
   id: string;
@@ -104,7 +104,7 @@ async function getPackItems(db: D1Database, packId: string): Promise<PackItemRow
   }));
 }
 
-async function refreshPackItemMetadataIfNeeded(env: Env, item: PackItemRow): Promise<PackItemRow> {
+async function refreshPackItemMetadataIfNeeded(env: ApiBindings, item: PackItemRow): Promise<PackItemRow> {
   if (!item.tarballUrl || !needsAuditRefresh(item.metadataJson)) {
     return item;
   }

@@ -1,8 +1,24 @@
 // User API routes
 import { Hono } from 'hono';
-import type { Env } from '../index.js';
+import type { ApiEnv } from '../env.js';
+import { authenticate } from '../utils/auth.js';
 
-export const userRouter = new Hono<{ Bindings: Env }>();
+export const userRouter = new Hono<ApiEnv>();
+
+type UserUpdateBody = {
+  email?: string;
+  username?: string;
+};
+
+type UserSkillRow = {
+  name: string;
+  namespace: string;
+  description: string | null;
+  version: string;
+  privacy: string;
+  created_at: number;
+  updated_at: number;
+};
 
 // Get current user
 userRouter.get('/', authenticate, async (c) => {
@@ -19,7 +35,7 @@ userRouter.get('/', authenticate, async (c) => {
 // Update user profile
 userRouter.patch('/', authenticate, async (c) => {
   const user = c.get('user');
-  const body = await c.req.json();
+  const body = await c.req.json<UserUpdateBody>().catch(() => ({} as UserUpdateBody));
 
   try {
     if (body.email) {
@@ -34,8 +50,14 @@ userRouter.patch('/', authenticate, async (c) => {
       ).bind(body.username, user.id).run();
     }
 
-    const stmt = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`);
-    const updated = await stmt.bind(user.id).first();
+    const stmt = await c.env.DB.prepare(
+      `SELECT id, username, email, created_at FROM users WHERE id = ?`
+    );
+    const updated = await stmt.bind(user.id).first<typeof user>();
+
+    if (!updated) {
+      return c.json({ error: 'not_found', message: 'User not found' }, 404);
+    }
 
     return c.json({
       id: updated.id,
@@ -59,10 +81,10 @@ userRouter.get('/skills', authenticate, async (c) => {
        WHERE namespace = ?
        ORDER BY updated_at DESC`
     );
-    const skills = await stmt.bind(user.username).all();
+    const skills = await stmt.bind(user.username).all<UserSkillRow>();
 
     return c.json({
-      skills: (skills.results || []).map((skill: any) => ({
+      skills: (skills.results || []).map((skill) => ({
         ...skill,
         listed: skill.privacy === 'public',
       })),
@@ -71,40 +93,3 @@ userRouter.get('/skills', authenticate, async (c) => {
     return c.json({ error: 'fetch_failed', message: (e as Error).message }, 500);
   }
 });
-
-// Auth middleware (inline)
-async function authenticate(c: any, next: () => Promise<Response>) {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-
-  // Try KV cache
-  const cachedUserId = await c.env.SKILLPACK_KV.get(`token:${token}`);
-  if (cachedUserId) {
-    const userStmt = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`);
-    const user = await userStmt.bind(cachedUserId).first();
-    if (user) {
-      c.set('user', user);
-      return next();
-    }
-  }
-
-  // Check API key
-  const stmt = await c.env.DB.prepare(
-    `SELECT u.* FROM users u
-     JOIN api_keys k ON u.id = k.user_id
-     WHERE k.key_hash = ?`
-  );
-  const user = await stmt.bind(token.slice(0, 32)).first();
-
-  if (!user) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  c.set('user', user);
-  await next();
-}

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import type { Env } from '../index.js';
+import type { ApiEnv } from '../env.js';
 import { getPublicProfile, resolveCatalogEntry, searchCatalog } from '../utils/catalog.js';
 
-export const v2Router = new Hono<{ Bindings: Env }>();
+export const v2Router = new Hono<ApiEnv>();
 
 v2Router.get('/catalog', async (c) => {
   const query = c.req.query('q') || '';

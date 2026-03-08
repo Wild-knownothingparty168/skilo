@@ -2,19 +2,17 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import type { ApiBindings, ApiEnv } from './env.js';
 import { skillsRouter } from './routes/skills.js';
 import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
 import { packsRouter } from './routes/packs.js';
 import { v2Router } from './routes/v2.js';
 
-export type Env = {
-  DB: D1Database;
-  SKILLPACK_BUCKET: R2Bucket;
-  SKILLPACK_KV: KVNamespace;
-};
+export type Env = ApiBindings;
+export type { ApiBindings, ApiEnv, AuthenticatedUser, PublisherUser } from './env.js';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<ApiEnv>();
 const supportedTools = [
   'claude-code',
   'codex',

@@ -57,15 +57,28 @@ function shouldServeMarkdown(request) {
   return true;
 }
 
+function withSecurityHeaders(response) {
+  const headers = new Headers(response.headers);
+  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-Content-Type-Options', 'nosniff');
+  headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function md(body, maxAge = 3600) {
-  return new Response(body, {
+  return withSecurityHeaders(new Response(body, {
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': `public, max-age=${maxAge}`,
       'X-Content-Format': 'markdown',
       'Vary': 'Accept, User-Agent, Sec-Fetch-Dest, Sec-Fetch-Mode, X-Skilo-Agent',
     },
-  });
+  }));
 }
 
 async function extractSkillMd(tarballUrl) {
@@ -114,7 +127,7 @@ export async function onRequest(context) {
   const path = url.pathname;
 
   if (!shouldServeMarkdown(context.request)) {
-    return context.next();
+    return withSecurityHeaders(await context.next());
   }
 
   // ── Static pages ──
@@ -193,5 +206,5 @@ export async function onRequest(context) {
     }
   }
 
-  return context.next();
+  return withSecurityHeaders(await context.next());
 }

@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import type { Env } from '../index.js';
+import type { ApiEnv, ApiBindings } from '../env.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
 import {
   analyzeSkillTarball,
@@ -9,10 +9,13 @@ import {
   parseVersionMetadata,
   type PublisherStatus,
 } from '../utils/trust.js';
+import type { Context } from 'hono';
+import { authenticate, getBearerToken, resolvePublisherFromToken } from '../utils/auth.js';
 
-export const skillsRouter = new Hono<{ Bindings: Env }>();
+export const skillsRouter = new Hono<ApiEnv>();
 
 type SkillIdRow = { id: string };
+type SkillDownloadRow = { id: string; privacy: string };
 type SkillRecordRow = {
   id: string;
   name: string;
@@ -91,7 +94,7 @@ async function getShareRecord(db: D1Database, token: string): Promise<ShareRow |
 }
 
 async function refreshStoredMetadataIfNeeded(
-  env: Env,
+  env: ApiBindings,
   input: {
     skillId: string;
     version: string;
@@ -724,9 +727,9 @@ skillsRouter.get('/:namespace/:name/tarball/:version', async (c) => {
 
   try {
     const skillStmt = await c.env.DB.prepare(
-      `SELECT id FROM skills WHERE namespace = ? AND name = ?`
+      `SELECT id, privacy FROM skills WHERE namespace = ? AND name = ?`
     );
-    const skill = await skillStmt.bind(namespace, name).first<SkillIdRow>();
+    const skill = await skillStmt.bind(namespace, name).first<SkillDownloadRow>();
 
     if (!skill) {
       return c.json({ error: 'not_found', message: 'Skill not found' }, 404);
@@ -843,72 +846,15 @@ skillsRouter.get('/:namespace/:name/verify', async (c) => {
   }
 });
 
-// Auth middleware
-async function authenticate(c: any, next: () => Promise<Response>) {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'unauthorized', message: 'Missing or invalid authorization' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-
-  const stmt = await c.env.DB.prepare(
-    `SELECT u.* FROM users u
-     JOIN api_keys k ON u.id = k.user_id
-     WHERE k.key_hash = ?`
-  );
-  const user = await stmt.bind(hashKey(token)).first();
-
-  if (!user) {
-    const tokenStmt = await c.env.DB.prepare(
-      `SELECT user_id FROM oauth_tokens WHERE access_token = ? AND expires_at > unixepoch()`
-    );
-    const oauthToken = await tokenStmt.bind(token).first();
-
-    if (!oauthToken) {
-      return c.json({ error: 'unauthorized', message: 'Invalid token' }, 401);
-    }
-
-    const userStmt = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`);
-    const oauthUser = await userStmt.bind(oauthToken.user_id).first();
-    c.set('user', oauthUser);
-  } else {
-    c.set('user', user);
-  }
-
-  await next();
-}
-
-async function resolvePublisher(c: any): Promise<{ id: string; username: string } | null> {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+async function resolvePublisher(
+  c: Pick<Context<ApiEnv>, 'req' | 'env'>
+): Promise<{ id: string; username: string } | null> {
+  const token = getBearerToken(c);
+  if (!token) {
     return null;
   }
 
-  const token = authHeader.slice(7);
-  const apiKeyUser = await c.env.DB.prepare(
-    `SELECT u.id, u.username FROM users u
-     JOIN api_keys k ON u.id = k.user_id
-     WHERE k.key_hash = ?`
-  ).bind(hashKey(token)).first() as { id: string; username: string } | null;
-
-  if (apiKeyUser) {
-    return apiKeyUser;
-  }
-
-  const oauthToken = await c.env.DB.prepare(
-    `SELECT user_id FROM oauth_tokens WHERE access_token = ? AND expires_at > unixepoch()`
-  ).bind(token).first() as { user_id: string } | null;
-
-  if (!oauthToken) {
-    return null;
-  }
-
-  return c.env.DB.prepare(
-    `SELECT id, username FROM users WHERE id = ?`
-  ).bind(oauthToken.user_id).first() as Promise<{ id: string; username: string } | null>;
+  return resolvePublisherFromToken(c.env, token);
 }
 
 function generateId(): string {
@@ -919,10 +865,6 @@ async function calculateChecksum(data: Uint8Array): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-function hashKey(key: string): string {
-  return key.slice(0, 32);
 }
 
 // Generate share token (base62, 8 chars, no lookalikes)

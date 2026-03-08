@@ -1,8 +1,9 @@
 // Auth API routes
 import { Hono } from 'hono';
-import type { Env } from '../index.js';
+import type { ApiEnv } from '../env.js';
+import { authenticate, hashApiToken } from '../utils/auth.js';
 
-export const authRouter = new Hono<{ Bindings: Env }>();
+export const authRouter = new Hono<ApiEnv>();
 
 type CliLoginBody = {
   username?: string;
@@ -85,7 +86,7 @@ authRouter.post('/cli-login', async (c) => {
     const userId = generateId();
     const keyId = generateId();
     const apiKey = `sk_${generateToken()}`;
-    const keyHash = hashKey(apiKey);
+    const keyHash = hashApiToken(apiKey);
     const createdAt = Math.floor(Date.now() / 1000);
 
     await c.env.DB.prepare(
@@ -182,7 +183,7 @@ authRouter.post('/keys', authenticate, async (c) => {
 
   try {
     const apiKey = `sk_${generateToken()}`;
-    const keyHash = hashKey(apiKey);
+    const keyHash = hashApiToken(apiKey);
 
     const keyId = generateId();
     await c.env.DB.prepare(
@@ -220,42 +221,4 @@ function hashSecret(secret: string): string {
   return secret.slice(0, 32);
 }
 
-function hashKey(key: string): string {
-  return key.slice(0, 32);
-}
-
-async function authenticate(c: any, next: () => Promise<Response>) {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  const token = authHeader.slice(7);
-
-  // Try to get from KV first
-  const cachedUserId = await c.env.SKILLPACK_KV.get(`token:${token}`);
-  if (cachedUserId) {
-    const userStmt = await c.env.DB.prepare(`SELECT * FROM users WHERE id = ?`);
-    const user = await userStmt.bind(cachedUserId).first();
-    if (user) {
-      c.set('user', user);
-      return next();
-    }
-  }
-
-  // Check API key
-  const stmt = await c.env.DB.prepare(
-    `SELECT u.* FROM users u
-     JOIN api_keys k ON u.id = k.user_id
-     WHERE k.key_hash = ?`
-  );
-  const user = await stmt.bind(hashKey(token)).first();
-
-  if (!user) {
-    return c.json({ error: 'unauthorized' }, 401);
-  }
-
-  c.set('user', user);
-  await next();
-}
+// Shared typed auth middleware lives in ../utils/auth.ts

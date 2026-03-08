@@ -1,4 +1,4 @@
-import type { Env } from '../index.js';
+import type { ApiBindings } from '../env.js';
 import { buildTrustInfo, parseVersionMetadata, type TrustInfo } from './trust.js';
 
 export type CatalogSourceKind = 'skilo' | 'github' | 'skills_sh' | 'snapshot';
@@ -191,7 +191,7 @@ function toExternalCatalogEntry(input: {
   };
 }
 
-async function fetchSkillsShCatalog(env: Env): Promise<CatalogEntry[]> {
+async function fetchSkillsShCatalog(env: ApiBindings): Promise<CatalogEntry[]> {
   const cached = await env.SKILLPACK_KV.get(SKILLS_SH_CACHE_KEY, { type: 'json' }) as CatalogEntry[] | null;
   if (cached && Array.isArray(cached)) {
     return cached;
@@ -228,7 +228,7 @@ async function fetchSkillsShCatalog(env: Env): Promise<CatalogEntry[]> {
   return entries;
 }
 
-async function queryNativeSkills(env: Env, query: string, limit: number): Promise<CatalogEntry[]> {
+async function queryNativeSkills(env: ApiBindings, query: string, limit: number): Promise<CatalogEntry[]> {
   const q = query.trim();
   let rows;
 
@@ -258,7 +258,7 @@ async function queryNativeSkills(env: Env, query: string, limit: number): Promis
   return (rows.results || []).map(toNativeCatalogEntry);
 }
 
-export async function searchCatalog(env: Env, query: string, limit: number): Promise<CatalogEntry[]> {
+export async function searchCatalog(env: ApiBindings, query: string, limit: number): Promise<CatalogEntry[]> {
   const safeLimit = Math.max(1, Math.min(limit, 60));
   const [nativeEntries, externalEntries] = await Promise.all([
     queryNativeSkills(env, query, safeLimit),
@@ -276,7 +276,7 @@ export async function searchCatalog(env: Env, query: string, limit: number): Pro
   return [...nativeEntries, ...filteredExternal].slice(0, safeLimit);
 }
 
-async function resolveNativeSkill(env: Env, namespace: string, name: string): Promise<CatalogEntry | null> {
+async function resolveNativeSkill(env: ApiBindings, namespace: string, name: string): Promise<CatalogEntry | null> {
   const row = await env.DB.prepare(
     `SELECT s.id, s.name, s.namespace, s.description, s.latest_version, s.privacy,
             sv.metadata_json, sv.signature, sv.checksumsha256
@@ -289,7 +289,7 @@ async function resolveNativeSkill(env: Env, namespace: string, name: string): Pr
   return row ? toNativeCatalogEntry(row) : null;
 }
 
-async function resolveShareSkill(env: Env, token: string): Promise<CatalogEntry | null> {
+async function resolveShareSkill(env: ApiBindings, token: string): Promise<CatalogEntry | null> {
   const row = await env.DB.prepare(
     `SELECT sl.token, s.id, s.name, s.namespace, s.description, s.latest_version, s.privacy,
             sv.metadata_json, sv.signature, sv.checksumsha256
@@ -303,7 +303,7 @@ async function resolveShareSkill(env: Env, token: string): Promise<CatalogEntry 
   return row ? toShareCatalogEntry(row) : null;
 }
 
-export async function resolveCatalogEntry(env: Env, input: string): Promise<CatalogEntry | null> {
+export async function resolveCatalogEntry(env: ApiBindings, input: string): Promise<CatalogEntry | null> {
   const trimmed = input.trim();
   if (!trimmed) {
     return null;
@@ -362,7 +362,7 @@ export async function resolveCatalogEntry(env: Env, input: string): Promise<Cata
   return null;
 }
 
-export async function getPublicProfile(env: Env, username: string): Promise<{
+export async function getPublicProfile(env: ApiBindings, username: string): Promise<{
   username: string;
   skills: CatalogEntry[];
   packs: never[];
