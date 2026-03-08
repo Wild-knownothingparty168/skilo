@@ -2,6 +2,7 @@
 import fetchRetry from 'fetch-retry';
 import type {
   SkillSearchResult,
+  CatalogEntry,
   SkillMetadata,
   SkillVersion,
   PackData,
@@ -45,7 +46,7 @@ export class ApiClient {
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'User-Agent': 'skilo-cli/1.0.22',
+      'User-Agent': 'skilo-cli/1.0.25',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -54,15 +55,32 @@ export class ApiClient {
   }
 
   async searchSkills(query: string): Promise<SkillSearchResult[]> {
-    const url = `${this.baseUrl}/v1/skills?q=${encodeURIComponent(query)}`;
+    const url = `${this.baseUrl}/v2/catalog?q=${encodeURIComponent(query)}`;
     const res = await fetchWithRetry(url, { headers: this.getHeaders() });
 
     if (!res.ok) {
       throw new Error(`Search failed: ${res.status} ${res.statusText}`);
     }
 
-    const data = await res.json() as SkillSearchResult[] | { skills?: SkillSearchResult[] };
-    return Array.isArray(data) ? data : data.skills || [];
+    const data = await res.json() as { entries?: CatalogEntry[] };
+    return (data.entries || []).map((entry) => ({
+      name: entry.name,
+      namespace: entry.owner,
+      description: entry.description,
+      version: entry.sourceKind,
+      installRef: entry.installRef,
+      sourceKind: entry.sourceKind,
+    })) as SkillSearchResult[];
+  }
+
+  async searchCatalog(query: string, limit: number = 24): Promise<CatalogEntry[]> {
+    const url = `${this.baseUrl}/v2/catalog?q=${encodeURIComponent(query)}&limit=${limit}`;
+    const res = await fetchWithRetry(url, { headers: this.getHeaders() });
+    if (!res.ok) {
+      throw new Error(`Catalog failed: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json() as { entries?: CatalogEntry[] };
+    return data.entries || [];
   }
 
   async getSkillMetadata(namespace: string, name: string): Promise<SkillMetadata> {
@@ -136,7 +154,7 @@ export class ApiClient {
     const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
-        'User-Agent': 'skilo-cli/1.0.22',
+        'User-Agent': 'skilo-cli/1.0.25',
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       },
       body: formData,
@@ -291,6 +309,22 @@ export class ApiClient {
       throw new Error(`Create pack failed: ${res.status} ${res.statusText}`);
     }
 
+    return res.json();
+  }
+
+  async createRefPack(
+    refs: string[]
+  ): Promise<{ token: string; url: string; count: number }> {
+    const url = `${this.baseUrl}/v1/packs/from-refs`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ refs }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Create ref pack failed: ${res.status} ${res.statusText}`);
+    }
     return res.json();
   }
 

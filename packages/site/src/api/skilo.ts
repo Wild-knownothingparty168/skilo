@@ -40,6 +40,20 @@ export interface SkillMetadata {
   updatedAt: number;
 }
 
+export interface CatalogEntry {
+  id: string;
+  sourceKind: 'skilo' | 'github' | 'skills_sh' | 'snapshot';
+  canonicalRef: string;
+  installRef: string;
+  owner: string;
+  name: string;
+  description: string;
+  homepage: string | null;
+  repository: string | null;
+  pageUrl: string | null;
+  trust: SkillMetadata['trust'] | null;
+}
+
 export interface ShareLinkInfo {
   token: string;
   expiresAt?: number | null;
@@ -68,6 +82,8 @@ export interface PackSkill {
   verified?: boolean;
   visibility?: 'public' | 'unlisted';
   trust?: SkillMetadata['trust'];
+  installRef?: string;
+  sourceKind?: 'skilo' | 'github' | 'skills_sh' | 'snapshot';
 }
 
 export interface PackData {
@@ -85,11 +101,25 @@ export interface PackData {
     derived?: boolean;
     sourcePackToken?: string | null;
   };
+  type?: 'native-pack' | 'ref-pack';
+  refs?: string[];
+  items?: Array<{
+    ref: string;
+    token: string;
+    url: string;
+    entry: CatalogEntry | null;
+  }>;
 }
 
 export interface SiteStats {
   skills: number;
   installs: number;
+}
+
+export interface ProfileData {
+  username: string;
+  skills: CatalogEntry[];
+  packs: Array<never>;
 }
 
 export const api = {
@@ -105,7 +135,10 @@ export const api = {
     return res.json();
   },
 
-  async resolveShare(token: string): Promise<{ skill: SkillMetadata; link?: ShareLinkInfo; trust?: SkillMetadata['trust']; requiresPassword: boolean }> {
+  async resolveShare(token: string): Promise<
+    | { type?: undefined; skill: SkillMetadata; link?: ShareLinkInfo; trust?: SkillMetadata['trust']; requiresPassword: boolean }
+    | { type: 'ref-link'; ref: string; token: string }
+  > {
     const res = await fetch(`${API_BASE}/v1/skills/share/${token}`);
     if (!res.ok) throw new Error('Invalid or expired share link');
     return res.json();
@@ -117,6 +150,41 @@ export const api = {
     return res.json();
   },
 
+  async getCatalog(query = '', limit = 24): Promise<{ query: string; total: number; entries: CatalogEntry[] }> {
+    const url = new URL(`${API_BASE}/v2/catalog`);
+    if (query) url.searchParams.set('q', query);
+    url.searchParams.set('limit', String(limit));
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to load catalog');
+    return res.json();
+  },
+
+  async resolveSource(input: string): Promise<{ resolved: boolean; input: string; entry?: CatalogEntry }> {
+    const res = await fetch(`${API_BASE}/v2/resolve-source`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input }),
+    });
+    if (!res.ok) throw new Error('Failed to resolve source');
+    return res.json();
+  },
+
+  async createRefPack(refs: string[]): Promise<{ token: string; url: string; count: number }> {
+    const res = await fetch(`${API_BASE}/v1/packs/from-refs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refs }),
+    });
+    if (!res.ok) throw new Error('Pack creation failed');
+    return res.json();
+  },
+
+  async getProfile(username: string): Promise<ProfileData> {
+    const res = await fetch(`${API_BASE}/v2/profiles/${username}`);
+    if (!res.ok) throw new Error('Profile not found');
+    return res.json();
+  },
+
   async subsetPack(source: string, keep: string[]): Promise<{ token: string; url: string; count: number }> {
     const res = await fetch(`${API_BASE}/v1/packs/subset`, {
       method: 'POST',
@@ -124,16 +192,6 @@ export const api = {
       body: JSON.stringify({ source, keep }),
     });
     if (!res.ok) throw new Error('Failed to create pack subset');
-    return res.json();
-  },
-
-  async createRefPack(refs: string[]): Promise<{ token: string; url: string; count: number; items: Array<{ ref: string; token: string; url: string }> }> {
-    const res = await fetch(`${API_BASE}/v1/packs/from-refs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refs }),
-    });
-    if (!res.ok) throw new Error('Pack creation failed');
     return res.json();
   },
 

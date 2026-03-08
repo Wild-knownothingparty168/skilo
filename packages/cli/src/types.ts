@@ -55,6 +55,22 @@ export interface SkillSearchResult {
   namespace: string;
   description: string;
   version: string;
+  installRef?: string;
+  sourceKind?: 'skilo' | 'github' | 'skills_sh' | 'snapshot';
+}
+
+export interface CatalogEntry {
+  id: string;
+  sourceKind: 'skilo' | 'github' | 'skills_sh' | 'snapshot';
+  canonicalRef: string;
+  installRef: string;
+  owner: string;
+  name: string;
+  description: string;
+  homepage: string | null;
+  repository: string | null;
+  pageUrl: string | null;
+  trust: SkillMetadata['trust'] | null;
 }
 
 export interface SkillVersion {
@@ -75,6 +91,8 @@ export interface PackSkill {
   verified?: boolean;
   visibility?: 'public' | 'unlisted';
   trust?: SkillMetadata['trust'];
+  installRef?: string;
+  sourceKind?: 'skilo' | 'github' | 'skills_sh' | 'snapshot';
 }
 
 export interface PackData {
@@ -92,6 +110,14 @@ export interface PackData {
     derived?: boolean;
     sourcePackToken?: string | null;
   };
+  type?: 'native-pack' | 'ref-pack';
+  refs?: string[];
+  items?: Array<{
+    ref: string;
+    token: string;
+    url: string;
+    entry: CatalogEntry | null;
+  }>;
 }
 
 export interface PublishSkillRequest {

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CopyIcon } from "../components/icons";
 import { api } from "../api/skilo";
-import type { PackData } from "../api/skilo";
+import type { CatalogEntry, PackData } from "../api/skilo";
 
 const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
 const MAIN = "flex flex-col gap-4 max-w-[600px] mx-auto p-5 pt-28 pb-20 lg:p-10 lg:pt-32 lg:pb-32 leading-relaxed text-base";
@@ -11,7 +11,7 @@ interface RefPackData {
   type: "ref-pack";
   token: string;
   refs: string[];
-  items?: Array<{ ref: string; token: string; url: string }>;
+  items?: Array<{ ref: string; token: string; url: string; entry?: CatalogEntry | null }>;
 }
 
 function PackPage() {
@@ -138,7 +138,8 @@ function PackPage() {
 
   if (refPack) {
     const refInstallCmd = `npx skilo-cli add skilo.xyz/p/${refPack.token}`;
-    const items = refPack.items || refPack.refs.map((ref) => ({ ref, token: "", url: "" }));
+    const items: Array<{ ref: string; token: string; url: string; entry?: CatalogEntry | null }> =
+      refPack.items || refPack.refs.map((ref) => ({ ref, token: "", url: "" }));
 
     return (
       <main className={MAIN}>
@@ -186,22 +187,54 @@ function PackPage() {
         </p>
 
         <div className="mt-6 flex flex-col gap-2">
-          <p className="text-sm font-medium text-black">Refs</p>
+          <p className="text-sm font-medium text-black">Pack contents</p>
           <div className="flex flex-col gap-2">
             {items.map((item) => (
               <div
                 key={item.ref}
-                className="flex items-center justify-between rounded-lg border border-stone-200 px-4 py-3"
+                className="flex items-start justify-between gap-4 rounded-lg border border-stone-200 px-4 py-3"
               >
-                <p className="text-sm text-stone-700 font-mono">{item.ref}</p>
-                {item.token && (
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-medium text-black">
+                      {item.entry ? `${item.entry.owner}/${item.entry.name}` : item.ref}
+                    </p>
+                    {item.entry && (
+                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[11px] uppercase tracking-[0.14em] text-stone-500">
+                        {item.entry.sourceKind === "skilo"
+                          ? "Native"
+                          : item.entry.sourceKind === "skills_sh"
+                            ? "skills.sh"
+                            : item.entry.sourceKind === "github"
+                              ? "Repo-backed"
+                              : "Snapshot"}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-1 truncate font-mono text-xs text-stone-400">
+                    {item.ref}
+                  </p>
+                  {item.entry?.description && (
+                    <p className="mt-2 text-sm text-stone-600">{item.entry.description}</p>
+                  )}
+                </div>
+                {item.token ? (
                   <Link
                     to={`/s/${item.token}`}
                     className="shrink-0 text-stone-300 text-sm hover:text-stone-500 transition-colors"
                   >
                     &rarr;
                   </Link>
-                )}
+                ) : item.entry?.pageUrl ? (
+                  <a
+                    href={item.entry.pageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-stone-300 text-sm hover:text-stone-500 transition-colors"
+                  >
+                    &rarr;
+                  </a>
+                ) : null}
               </div>
             ))}
           </div>

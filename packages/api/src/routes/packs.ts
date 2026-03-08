@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import type { Env } from '../index.js';
 import { rateLimiters } from '../middleware/rateLimit.js';
 import { aggregatePackTrust, buildTrustInfo } from '../utils/trust.js';
+import { resolveCatalogEntry } from '../utils/catalog.js';
 
 export const packsRouter = new Hono<{ Bindings: Env }>();
 
@@ -437,12 +438,40 @@ packsRouter.get('/:token', rateLimiters.resolveShare, async (c) => {
       // Fallback: check KV for ref packs
       const refPack = await c.env.SKILLPACK_KV.get(`ref-pack:${token}`, { type: 'json' }) as { refs: string[]; items?: Array<{ ref: string; token: string; url: string }>; createdAt: number } | null;
       if (refPack) {
+        const resolvedItems = refPack.items
+          ? await Promise.all(
+              refPack.items.map(async (item) => ({
+                ...item,
+                entry: await resolveCatalogEntry(c.env, item.ref),
+              }))
+            )
+          : [];
+        const skills = resolvedItems.flatMap((item) => {
+          if (!item.entry) {
+            return [];
+          }
+
+          return [{
+            namespace: item.entry.owner,
+            name: item.entry.name,
+            description: item.entry.description,
+            version: item.entry.sourceKind,
+            shareToken: item.token,
+            url: item.url,
+            verified: item.entry.trust?.verified,
+            visibility: item.entry.trust?.visibility,
+            trust: item.entry.trust,
+            installRef: item.entry.installRef,
+            sourceKind: item.entry.sourceKind,
+          }];
+        });
         return c.json({
-          name: null,
+          name: 'Ref Pack',
           token,
           type: 'ref-pack',
           refs: refPack.refs,
-          items: refPack.items,
+          items: resolvedItems,
+          skills,
         });
       }
       return c.json({ error: 'not_found', message: 'Pack not found' }, 404);

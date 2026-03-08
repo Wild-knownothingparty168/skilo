@@ -6,6 +6,7 @@ import { skillsRouter } from './routes/skills.js';
 import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
 import { packsRouter } from './routes/packs.js';
+import { v2Router } from './routes/v2.js';
 
 export type Env = {
   DB: D1Database;
@@ -45,6 +46,9 @@ app.get('/', (c) => c.json({
     'resolve-share-links',
     'resolve-packs',
     'subset-packs',
+    'unified-catalog',
+    'resolve-sources',
+    'public-profiles',
     'publish-skills',
     'audit-skills',
     'capability-inference',
@@ -70,6 +74,9 @@ app.get('/v1', (c) => c.json({
     cliLogin: '/v1/auth/cli-login',
     currentUser: '/v1/user',
     userSkills: '/v1/user/skills',
+    catalog: '/v2/catalog',
+    resolveSource: '/v2/resolve-source',
+    profile: '/v2/profiles/:username',
   },
   supportedTools,
 }));
@@ -89,6 +96,7 @@ app.route('/v1/skills', skillsRouter);
 app.route('/v1/auth', authRouter);
 app.route('/v1/user', userRouter);
 app.route('/v1/packs', packsRouter);
+app.route('/v2', v2Router);
 
 // 404 handler
 app.notFound((c) => c.json({ error: 'not_found', message: 'Not found' }, 404));

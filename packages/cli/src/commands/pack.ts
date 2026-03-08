@@ -35,29 +35,54 @@ export async function packCommand(
 async function createCuratedPack(sources: string[], options: PackOptions): Promise<void> {
   const client = await getClient();
   const tokens = new Set<string>();
+  const refs = new Set<string>();
   const included: Array<{ source: string; token: string; url: string; created: boolean }> = [];
+  let needsRefPack = false;
 
   for (const source of sources) {
-    const result = await ensureShareLinkForSource(source, {
-      oneTime: options.oneTime,
-      expires: options.expires,
-      uses: options.uses,
-      password: options.password,
-      listed: options.listed,
-      unlisted: options.unlisted ?? !options.listed,
-    });
+    try {
+      const result = await ensureShareLinkForSource(source, {
+        oneTime: options.oneTime,
+        expires: options.expires,
+        uses: options.uses,
+        password: options.password,
+        listed: options.listed,
+        unlisted: options.unlisted ?? !options.listed,
+      });
 
-    if (tokens.has(result.token)) {
-      continue;
+      if (tokens.has(result.token)) {
+        continue;
+      }
+
+      tokens.add(result.token);
+      refs.add(result.url);
+      included.push({
+        source,
+        token: result.token,
+        url: result.url,
+        created: result.created,
+      });
+    } catch (error) {
+      const message = (error as Error).message;
+      if (
+        /^https?:\/\/github\.com\//i.test(source) ||
+        /^https?:\/\/skills\.sh\//i.test(source) ||
+        /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@.+$/.test(source) ||
+        /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+:.+$/.test(source)
+      ) {
+        needsRefPack = true;
+        refs.add(source);
+        included.push({
+          source,
+          token: '',
+          url: source,
+          created: false,
+        });
+        continue;
+      }
+
+      throw new Error(message);
     }
-
-    tokens.add(result.token);
-    included.push({
-      source,
-      token: result.token,
-      url: result.url,
-      created: result.created,
-    });
   }
 
   if (included.length === 0) {
@@ -65,7 +90,9 @@ async function createCuratedPack(sources: string[], options: PackOptions): Promi
   }
 
   const packName = options.name || derivePackName(sources);
-  const pack = await client.createPack(packName, [...tokens]);
+  const pack = needsRefPack
+    ? await client.createRefPack([...refs])
+    : await client.createPack(packName, [...tokens]);
 
   logSuccess(`Pack ready with ${pack.count} skills`);
 

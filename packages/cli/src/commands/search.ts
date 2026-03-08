@@ -28,8 +28,9 @@ export async function searchCommand(query: string): Promise<void> {
     printSection(`Found ${results.length} skill${results.length === 1 ? '' : 's'}`, 'primary');
     printPrimary('');
     for (const skill of results) {
-      printPrimary(`${skill.namespace}/${skill.name}`);
-      printKeyValue('version', skill.version, 12);
+      printPrimary(skill.installRef || `${skill.namespace}/${skill.name}`);
+      printKeyValue('source', skill.sourceKind || 'skilo', 12);
+      printKeyValue('label', `${skill.namespace}/${skill.name}`, 12);
       if (skill.description) {
         printKeyValue('description', skill.description, 12);
       }

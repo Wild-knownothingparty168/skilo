@@ -33,6 +33,42 @@ import { discoverSkills, getToolLabel, resolveToolName } from '../tool-dirs.js';
 import { pickItems } from '../utils/picker.js';
 import { parsePackToken } from './share.js';
 
+/**
+ * Normalize a ref-pack entry into a source + options that importCommand can handle.
+ * Ref-pack entries are arbitrary user-pasted strings like:
+ *   - "owner/repo:path"      → github:owner/repo#path (GitHub subpath)
+ *   - "owner/repo@skill"     → owner/repo with --skill skill (GitHub repo + skill selection)
+ *   - "owner/repo"           → owner/repo (plain GitHub repo)
+ *   - "https://github.com/…" → passed through as-is
+ *   - "skilo.xyz/s/…"        → passed through as-is
+ */
+function normalizeRefPackEntry(ref: string, baseOptions: InstallOptions): { source: string; options: InstallOptions } {
+  const trimmed = ref.trim();
+
+  // Already a URL — pass through
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('github:')) {
+    return { source: trimmed, options: baseOptions };
+  }
+
+  // owner/repo:path → github:owner/repo#path
+  const colonMatch = trimmed.match(/^([^/@\s]+\/[^/@:\s]+):(.+)$/);
+  if (colonMatch) {
+    return { source: `github:${colonMatch[1]}#${colonMatch[2]}`, options: { ...baseOptions, all: true } };
+  }
+
+  // owner/repo@skill → GitHub repo with skill selection
+  const atMatch = trimmed.match(/^([^/@\s]+\/[^/@\s]+)@(.+)$/);
+  if (atMatch) {
+    return {
+      source: atMatch[1],
+      options: { ...baseOptions, skill: [atMatch[2]] },
+    };
+  }
+
+  // Plain ref — pass through
+  return { source: trimmed, options: baseOptions };
+}
+
 function classifyImportSource(source: string): 'tool' | 'registry' | 'pack' | 'github' | 'bundle' | 'share' | 'url' | 'local' {
   if (resolveToolName(source)) return 'tool';
   if (parsePackToken(source)) return 'pack';
@@ -487,18 +523,16 @@ export async function importCommand(source: string, options: InstallOptions = {}
       const pack: any = await client.resolvePack(packToken);
 
       // Ref-packs contain raw refs (GitHub URLs, short refs, etc.) — not resolved skills.
-      // Install each ref individually.
+      // Resolve all refs first, discover skills, then present a unified picker.
       if (pack.type === 'ref-pack') {
-        const refs: string[] = pack.items
+        const rawRefs: string[] = pack.items
           ? pack.items.map((item: any) => item.ref)
           : pack.refs || [];
-        if (refs.length === 0) {
+        if (rawRefs.length === 0) {
           exitWithError('Ref pack is empty');
         }
-        logInfo(`Installing ${refs.length} ref${refs.length === 1 ? '' : 's'} from pack...`);
-        for (const ref of refs) {
-          await importCommand(ref, options);
-        }
+
+        await importRefPack(rawRefs, source, options);
         return;
       }
 
@@ -693,6 +727,123 @@ export async function importCommand(source: string, options: InstallOptions = {}
   }
 }
 
+interface ResolvedRefSkill {
+  ref: string;
+  skill: RepoSkillCandidate;
+  cleanupPath: string;
+}
+
+async function importRefPack(rawRefs: string[], source: string, options: InstallOptions): Promise<void> {
+  const allSkills: ResolvedRefSkill[] = [];
+  const cleanupPaths: string[] = [];
+
+  // Phase 1: Resolve all refs and discover skills
+  logInfo(`Resolving ${rawRefs.length} ref${rawRefs.length === 1 ? '' : 's'}...`);
+
+  for (const rawRef of rawRefs) {
+    const { source: refSource, options: refOptions } = normalizeRefPackEntry(rawRef, options);
+    const normalized = normalizeSourceInput(refSource);
+
+    try {
+      let skillPath: string;
+      let cleanupPath: string | null = null;
+
+      if (refSource.startsWith('github:') || isGitHubRepoLike(normalized)) {
+        const ghSource = refSource.startsWith('github:') ? refSource : normalizeGitHubSource(normalized);
+        const imported = await importFromGitHub(ghSource);
+        skillPath = imported.skillPath;
+        cleanupPath = imported.cleanupPath;
+      } else if (normalized.startsWith('https://skilo.xyz/s/')) {
+        const imported = await importFromShareLink(normalized);
+        skillPath = imported.skillPath;
+        cleanupPath = imported.cleanupPath;
+      } else if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+        const imported = await importFromUrl(normalized);
+        skillPath = imported.skillPath;
+        cleanupPath = imported.cleanupPath;
+      } else {
+        skillPath = await importFromLocalPath(normalized, true);
+      }
+
+      if (cleanupPath) cleanupPaths.push(cleanupPath);
+
+      const repoSkills = await discoverRepoSkills(skillPath);
+      const selected = selectRepoSkills(repoSkills, refOptions);
+      const skills = selected.length > 0 ? selected : repoSkills;
+
+      for (const skill of skills) {
+        allSkills.push({ ref: rawRef, skill, cleanupPath: cleanupPath || skillPath });
+      }
+    } catch (e) {
+      logInfo(`Skipping ${rawRef}: ${(e as Error).message}`);
+    }
+  }
+
+  if (allSkills.length === 0) {
+    exitWithError('No skills found in any ref');
+  }
+
+  // Phase 2: Show skill picker
+  logInfo(`Found ${allSkills.length} skill${allSkills.length === 1 ? '' : 's'} from ${rawRefs.length} ref${rawRefs.length === 1 ? '' : 's'}`);
+
+  let selectedSkills = allSkills;
+
+  if (allSkills.length > 1 && process.stdin.isTTY && !isJsonOutput() && !options.all) {
+    const picked = await pickItems(
+      allSkills.map((s) => ({
+        value: s,
+        name: s.skill.name,
+        description: s.skill.description,
+        meta: s.ref,
+      })),
+      'Select skills to install'
+    );
+
+    if (picked.cancelled || picked.selected.length === 0) {
+      logInfo('No skills selected.');
+      for (const p of cleanupPaths) await rm(p, { recursive: true, force: true });
+      return;
+    }
+    selectedSkills = picked.selected;
+  }
+
+  // Phase 3: Pick install targets (once for all skills)
+  const installResolution = await resolveInstallTargets(options);
+  if (installResolution.mode === 'needs_target' || (installResolution.mode === 'selected' && installResolution.targets.length === 0)) {
+    emitTargetSelectionNoop(source, 'pack', selectedSkills.length, installResolution);
+    for (const p of cleanupPaths) await rm(p, { recursive: true, force: true });
+    return;
+  }
+
+  // Phase 4: Install
+  const installResults = [];
+  for (const { skill } of selectedSkills) {
+    logInfo(`Installing ${skill.name}${skill.relativeDir === '.' ? '' : ` from ${skill.relativeDir}`}`);
+    installResults.push(await installSkill(skill.path, options, installResolution));
+  }
+
+  logSuccess(`Installed ${installResults.length} skill${installResults.length === 1 ? '' : 's'} from ref pack`);
+
+  if (isJsonOutput()) {
+    printJson({
+      command: 'add',
+      source,
+      resolvedType: 'ref-pack',
+      skillCount: installResults.length,
+      detectedTargets: installResolution.detectedTargets,
+      installedTargets: installResolution.targets,
+      installedSkills: installResults.map((r) => ({
+        name: r.name,
+        targets: r.targets,
+        installedDirs: r.installedDirs,
+      })),
+    });
+  }
+
+  // Cleanup
+  for (const p of cleanupPaths) await rm(p, { recursive: true, force: true });
+}
+
 async function createTempDir(prefix: string): Promise<string> {
   return mkdtemp(join(tmpdir(), prefix));
 }
@@ -711,7 +862,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.22',
+      'User-Agent': 'skilo-cli/1.0.25',
     },
   });
 

@@ -4,38 +4,12 @@
 
 ## 2026-03-08
 
-### Removed
-
-- Remove the workspace React type override (`bbab195`)
-- Remove llms.txt badge from landing page (`55fefe6`)
-- Remove dot separator from anon names (ancat not an.cat) (`2003234`)
-
-### Added
-
-- Add live stats to the landing page (`f1982ad`)
-- Support skills.sh shorthand installs (`0c8f1bc`)
-- Add subset-aware pack installs (`fe66443`)
-- Add tool-to-tool skill sync flows (`919140b`)
-- Add first-class curated skill packs (`c33436b`)
-- Add Vercel-style repo skill compatibility (`89cce5f`)
-- Add syntax highlighting for code blocks (`81c267c`)
-- Add auto-generated changelog page (`7daab58`)
-- Add supported tool icons to landing page (`0c967e6`)
-- Add llmstxt.org-compatible markdown for all pages (`9cfcf4e`)
-- Add emerald accent to logo, fix favicon/OG/metadata (`d8516df`)
-- Add llms.txt and official Skilo skill (`e92d686`)
-- Support native installs for all tools (`70273cd`)
-- Add explicit agent install targets (`abefba0`)
-- Support share URLs and refs in add/import (`c56b5a2`)
-- Add skill packs and scope CLI package (`8e440aa`)
-- Add comprehensive README with install docs (`6f3d192`)
-- Add Skilo v2: web presence, enhanced sharing, import/export, signing (`1dbfbc8`)
-- Add short memorable anon names (2-letter prefix + noun) (`4b5bb0b`)
-- Add anon publishing with claim tokens (`07cd2ce`)
-- Add publishing lifecycle, trust & ops commands (`5406ccf`)
-
 ### Changed
 
+- Handle ref-packs in CLI add and inspect (`e34caf4`)
+- Handle ref-link and ref-pack responses in site pages (`fd2a75b`)
+- Resolve stored ref links from share tokens (`fbddaaa`)
+- Persist ref pack link items (`6054e74`)
 - Improve GitHub and skills.sh imports (`a02cfbe`)
 - Refine the interactive CLI with Ink (`28feb2c`)
 - Make homepage action-first with paste box (`653df3f`)
@@ -65,6 +39,38 @@
 - Update site with npm install instructions (`e24419b`)
 - Publish skilo-cli@1.0.0 to npm (`4d151cf`)
 - Prepare cli package for npm publish (`1fdfdbd`)
+
+### Added
+
+- Add multi-ref packer to landing page (`3f74d0b`)
+- Add trust auditing for skills and packs (`cd29254`)
+- Add live stats to the landing page (`f1982ad`)
+- Support skills.sh shorthand installs (`0c8f1bc`)
+- Add subset-aware pack installs (`fe66443`)
+- Add tool-to-tool skill sync flows (`919140b`)
+- Add first-class curated skill packs (`c33436b`)
+- Add Vercel-style repo skill compatibility (`89cce5f`)
+- Add syntax highlighting for code blocks (`81c267c`)
+- Add auto-generated changelog page (`7daab58`)
+- Add supported tool icons to landing page (`0c967e6`)
+- Add llmstxt.org-compatible markdown for all pages (`9cfcf4e`)
+- Add emerald accent to logo, fix favicon/OG/metadata (`d8516df`)
+- Add llms.txt and official Skilo skill (`e92d686`)
+- Support native installs for all tools (`70273cd`)
+- Add explicit agent install targets (`abefba0`)
+- Support share URLs and refs in add/import (`c56b5a2`)
+- Add skill packs and scope CLI package (`8e440aa`)
+- Add comprehensive README with install docs (`6f3d192`)
+- Add Skilo v2: web presence, enhanced sharing, import/export, signing (`1dbfbc8`)
+- Add short memorable anon names (2-letter prefix + noun) (`4b5bb0b`)
+- Add anon publishing with claim tokens (`07cd2ce`)
+- Add publishing lifecycle, trust & ops commands (`5406ccf`)
+
+### Removed
+
+- Remove the workspace React type override (`bbab195`)
+- Remove llms.txt badge from landing page (`55fefe6`)
+- Remove dot separator from anon names (ancat not an.cat) (`2003234`)
 
 ### Fixed
 
