@@ -1,6 +1,6 @@
 // API client for skilo site
 const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-const API_BASE = viteEnv?.VITE_API_BASE || 'https://api.skilo.dev';
+const API_BASE = viteEnv?.VITE_API_BASE || 'https://skilo-api.yaz-b35.workers.dev';
 
 export interface SkillMetadata {
   name: string;
