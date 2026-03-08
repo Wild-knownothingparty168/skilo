@@ -12,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-stone-100">
         <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-10 lg:py-4">
           <Link to="/" className="flex items-center gap-2 font-medium">
             <SkiloMark className="h-5 w-5" />

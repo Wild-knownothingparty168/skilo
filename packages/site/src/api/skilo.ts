@@ -127,6 +127,16 @@ export const api = {
     return res.json();
   },
 
+  async createRefPack(refs: string[]): Promise<{ token: string; url: string; count: number; items: Array<{ ref: string; token: string; url: string }> }> {
+    const res = await fetch(`${API_BASE}/v1/packs/from-refs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refs }),
+    });
+    if (!res.ok) throw new Error('Pack creation failed');
+    return res.json();
+  },
+
   async fetchSkillContent(tarballUrl: string): Promise<string> {
     const url = tarballUrl.startsWith('http') ? tarballUrl : `${API_BASE}${tarballUrl}`;
     const res = await fetch(url);
