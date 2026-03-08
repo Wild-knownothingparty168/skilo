@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Polish bulk skill sharing flow (`a9b7b0b`)
+- Strengthen skill auditing and refresh stale trust (`a3fc190`)
 - Tighten transfer flows and share semantics (`a97b5c8`)
 - Restore minimal landing flow (`a07afed`)
 - Build unified catalog, profiles, and pack tray (`e778ee1`)
