@@ -1,10 +1,11 @@
 import { getClient } from '../api/client.js';
 import { createInterface } from 'node:readline';
-import { resolveSkillLocation } from '../utils/skill-file.js';
+import { readSkillContent, resolveSkillLocation } from '../utils/skill-file.js';
 import { publishLocalSkill } from './publish.js';
 import { isKnownTool, discoverSkills, getToolLabel, resolveToolName } from '../tool-dirs.js';
 import { pickSkills } from '../utils/picker.js';
 import { blankLine, exitWithError, isJsonOutput, logError, logInfo, logSuccess, printJson, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
+import { validateSkillContent } from '../manifest.js';
 
 interface ShareOptions {
   oneTime?: boolean;
@@ -15,6 +16,50 @@ interface ShareOptions {
   yes?: boolean;
   listed?: boolean;
   unlisted?: boolean;
+}
+
+interface PreflightShareResult {
+  skill: Awaited<ReturnType<typeof discoverSkills>>[number];
+  valid: boolean;
+  error?: string;
+}
+
+interface BulkShareSuccess {
+  name: string;
+  token: string;
+  url: string;
+  namespace: string;
+  manifestName: string;
+  warnings: string[];
+}
+
+async function preflightShareSkills(
+  skills: Awaited<ReturnType<typeof discoverSkills>>
+): Promise<PreflightShareResult[]> {
+  return Promise.all(
+    skills.map(async (skill) => {
+      try {
+        const { skillFile, content } = await readSkillContent(skill.path);
+        const validation = validateSkillContent(content);
+        if (!validation.valid) {
+          const error = validation.errors.map((item) => `${item.field}: ${item.message}`).join('; ');
+          return {
+            skill,
+            valid: false,
+            error: `${skillFile} is invalid${error ? ` (${error})` : ''}`,
+          };
+        }
+
+        return { skill, valid: true };
+      } catch (error) {
+        return {
+          skill,
+          valid: false,
+          error: (error as Error).message,
+        };
+      }
+    })
+  );
 }
 
 function parseSkillRef(skill: string): { namespace: string; name: string } {
@@ -205,22 +250,56 @@ async function bulkShareCommand(
   }
 
   const client = await getClient();
-  const total = selected.length;
+  const preflight = await preflightShareSkills(selected);
+  const ready = preflight.filter((result) => result.valid).map((result) => result.skill);
+  const failures: { name: string; error: string }[] = preflight
+    .filter((result): result is PreflightShareResult & { valid: false; error: string } => !result.valid && Boolean(result.error))
+    .map((result) => ({ name: result.skill.name, error: result.error! }));
+
+  if (ready.length === 0) {
+    if (isJsonOutput()) {
+      printJson({
+        command: 'share',
+        mode: 'bulk',
+        tool: toolName,
+        pack: null,
+        successes: [],
+        failures,
+        warnings: [],
+      });
+      return;
+    }
+
+    blankLine();
+    printSection(`Skipped or failed (${failures.length})`);
+    for (const failure of failures) {
+      logError(`${failure.name}: ${failure.error}`);
+    }
+    return;
+  }
+
+  const total = ready.length;
 
   blankLine();
+  if (failures.length > 0) {
+    logInfo(`Preflight checked ${selected.length} skill${selected.length === 1 ? '' : 's'}`);
+    logInfo(`${ready.length} ready, ${failures.length} skipped before publish`);
+    blankLine();
+  }
   logInfo(`Publishing ${total} skill${total === 1 ? '' : 's'}`);
 
-  const successes: { name: string; token: string; url: string }[] = [];
-  const failures: { name: string; error: string }[] = [];
+  const successes: BulkShareSuccess[] = [];
 
   for (let i = 0; i < total; i++) {
-    const skill = selected[i];
+    const skill = ready[i];
     logInfo(`[${i + 1}/${total}] ${skill.name}`);
 
     try {
-      const { manifest, namespace } = await publishLocalSkill(skill.path, {
+      const { manifest, namespace, trust } = await publishLocalSkill(skill.path, {
         listed: options.listed,
         unlisted: options.unlisted ?? !options.listed,
+        quiet: true,
+        suppressTrustSummary: true,
       });
       const result = await client.createShareLink(
         namespace,
@@ -231,17 +310,28 @@ async function bulkShareCommand(
         password
       );
       logSuccess(`Shared ${namespace}/${manifest.name}`);
-      successes.push({ name: skill.name, token: result.token, url: result.url });
+      successes.push({
+        name: skill.name,
+        token: result.token,
+        url: result.url,
+        namespace,
+        manifestName: manifest.name,
+        warnings: trust?.auditStatus === 'warning'
+          ? [...new Set((trust.riskSummary || []).filter(Boolean))]
+          : [],
+      });
     } catch (e) {
       logError(`${skill.name}: ${(e as Error).message}`);
       failures.push({ name: skill.name, error: (e as Error).message });
     }
   }
 
+  let packResult: { token: string; url: string; count: number } | null = null;
+
   if (successes.length >= 2) {
     try {
       const tokens = successes.map((s) => s.token);
-      const packResult = await client.createPack(toolName, tokens);
+      packResult = await client.createPack(toolName, tokens);
       blankLine();
       logSuccess(`Pack ready with ${packResult.count} skills`);
       if (isJsonOutput()) {
@@ -252,10 +342,12 @@ async function bulkShareCommand(
           pack: packResult,
           successes,
           failures,
+          warnings: successes
+            .filter((success) => success.warnings.length > 0)
+            .map((success) => ({ name: success.name, warnings: success.warnings })),
         });
         return;
       }
-      printPrimary(packResult.url);
     } catch (e) {
       logError(`Pack creation failed: ${(e as Error).message}`);
     }
@@ -269,26 +361,57 @@ async function bulkShareCommand(
       pack: null,
       successes,
       failures,
+      warnings: successes
+        .filter((success) => success.warnings.length > 0)
+        .map((success) => ({ name: success.name, warnings: success.warnings })),
     });
     return;
   }
 
+  const warned = successes.filter((success) => success.warnings.length > 0);
+
+  const reportLines: string[] = [];
+  if (packResult) {
+    reportLines.push('Pack', packResult.url, '');
+  }
+  reportLines.push('Summary');
+  reportLines.push(`selected: ${selected.length}`);
+  reportLines.push(`shared: ${successes.length}`);
+  if (warned.length > 0) {
+    reportLines.push(`warning-only: ${warned.length}`);
+  }
+  if (failures.length > 0) {
+    reportLines.push(`failed: ${failures.length}`);
+  }
+
   if (successes.length > 0) {
-    blankLine();
-    printSection('Individual links');
-    const maxNameLen = Math.max(...successes.map((s) => s.name.length));
-    for (const s of successes) {
-      if (process.stdout.isTTY) {
-        printPrimary(`${s.name.padEnd(maxNameLen)}  ${s.url}`);
-      } else {
-        printPrimary(`${s.name}\t${s.url}`);
+    reportLines.push('', 'Individual links');
+    const maxNameLen = Math.max(...successes.map((success) => success.name.length));
+    for (const success of successes) {
+      reportLines.push(
+        process.stdout.isTTY
+          ? `${success.name.padEnd(maxNameLen)}  ${success.url}`
+          : `${success.name}\t${success.url}`
+      );
+    }
+  }
+
+  if (warned.length > 0) {
+    reportLines.push('', `Warnings (${warned.length})`);
+    for (const success of warned) {
+      reportLines.push(success.name);
+      for (const warning of success.warnings) {
+        reportLines.push(`risk: ${warning}`);
       }
     }
   }
 
+  blankLine();
+  printPrimary(reportLines.join('\n'));
+
   if (failures.length > 0) {
     blankLine();
-    printSection(`Failed (${failures.length})`);
+    printSection(`Skipped or failed (${failures.length})`);
     for (const f of failures) {
       logError(`${f.name}: ${f.error}`);
     }

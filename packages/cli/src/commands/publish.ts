@@ -16,6 +16,8 @@ interface PublishOptions {
   sign?: boolean;
   listed?: boolean;
   unlisted?: boolean;
+  quiet?: boolean;
+  suppressTrustSummary?: boolean;
 }
 
 function resolvePublishVisibility(options: PublishOptions | undefined, authenticated: boolean, defaultWhenAuthenticated: 'listed' | 'unlisted'): boolean {
@@ -104,7 +106,8 @@ export async function publishLocalSkill(
   const result = validateSkillContent(content);
 
   if (!result.valid || !result.manifest) {
-    throw new Error(`${skillFile} is invalid`);
+    const details = result.errors.map((error) => `${error.field}: ${error.message}`).join('; ');
+    throw new Error(`${skillFile} is invalid${details ? ` (${details})` : ''}`);
   }
 
   const manifest = result.manifest;
@@ -122,7 +125,9 @@ export async function publishLocalSkill(
       const sig = await sign(checksumBytes, keys.privateKey);
       signature = encodeBase64Url(sig);
       publicKey = encodeBase64Url(keys.publicKey);
-      logSuccess('Signed skill bundle');
+      if (!options?.quiet) {
+        logSuccess('Signed skill bundle');
+      }
     } catch (e) {
       logWarn(`Could not sign skill: ${(e as Error).message}`);
     }
@@ -148,7 +153,9 @@ export async function publishLocalSkill(
     try {
       await mkdir(join(homedir(), '.skilo', 'claims'), { recursive: true });
       await writeFile(claimFile, claimToken, 'utf-8');
-      printNote('claim file', claimFile);
+      if (!options?.quiet) {
+        printNote('claim file', claimFile);
+      }
     } catch (e) {
       logWarn(`Could not save claim token: ${(e as Error).message}`);
     }
@@ -168,7 +175,7 @@ export async function publishLocalSkill(
     publicKey
   );
 
-  if (publishResult.trust?.auditStatus === 'warning') {
+  if (publishResult.trust?.auditStatus === 'warning' && !options?.suppressTrustSummary) {
     printTrustSummary(publishResult.trust);
   }
 
