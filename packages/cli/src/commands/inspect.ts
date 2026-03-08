@@ -1,14 +1,16 @@
 // Inspect skill without installing
 import { getClient } from '../api/client.js';
+import { exitWithError, logWarn, printKeyValue, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
 
 export async function inspectCommand(source: string): Promise<void> {
   if (!source) {
-    console.error('Usage: skilo inspect <skill>');
-    console.error('');
-    console.error('Examples:');
-    console.error('  skilo inspect namespace/name');
-    console.error('  skilo inspect https://skilo.xyz/s/abc123');
-    process.exit(1);
+    printUsage([
+      'Usage: skilo inspect <skill>',
+      '',
+      'Examples:',
+      '  skilo inspect namespace/name',
+      '  skilo inspect https://skilo.xyz/s/abc123',
+    ]);
   }
 
   try {
@@ -37,7 +39,7 @@ export async function inspectCommand(source: string): Promise<void> {
 
       const data = await response.json();
       if (data.requiresPassword) {
-        console.log('🔒 This skill is password protected');
+        logWarn('This skill is password protected');
         return;
       }
       skill = data.skill;
@@ -57,42 +59,36 @@ export async function inspectCommand(source: string): Promise<void> {
       throw new Error('Invalid skill reference. Use: namespace/name or https://skilo.xyz/s/...');
     }
 
-    // Display
-    console.log('');
-    console.log(`${skill.namespace}/${skill.name}`);
-    console.log('=' .repeat(40));
-    console.log('');
+    printSection(`${skill.namespace}/${skill.name}`, 'primary');
 
     if (skill.description) {
-      console.log(`Description: ${skill.description}`);
+      printKeyValue('description', skill.description);
     }
     if (skill.version) {
-      console.log(`Version:     ${skill.version}`);
+      printKeyValue('version', skill.version);
     }
     if (skill.author) {
-      console.log(`Author:      ${skill.author}`);
+      printKeyValue('author', skill.author);
     }
     if (skill.homepage) {
-      console.log(`Homepage:    ${skill.homepage}`);
+      printKeyValue('homepage', skill.homepage);
     }
     if (skill.repository) {
-      console.log(`Repository:  ${skill.repository}`);
+      printKeyValue('repository', skill.repository);
     }
     if (skill.keywords && skill.keywords.length > 0) {
-      console.log(`Keywords:    ${skill.keywords.join(', ')}`);
+      printKeyValue('keywords', skill.keywords.join(', '));
     }
     if (skill.size) {
-      console.log(`Size:        ${(skill.size / 1024).toFixed(2)} KB`);
+      printKeyValue('size', `${(skill.size / 1024).toFixed(2)} KB`);
     }
     if (skill.checksum) {
-      console.log(`Checksum:    ${skill.checksum.substring(0, 16)}...`);
+      printKeyValue('checksum', `${skill.checksum.substring(0, 16)}...`);
     }
 
-    console.log('');
-    console.log('To install, run:');
-    console.log(`  skilo add ${source}`);
+    printPrimary('');
+    printNote('install', `skilo add ${source}`, 'primary');
   } catch (e) {
-    console.error(`Inspect failed: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError(`Inspect failed: ${(e as Error).message}`);
   }
 }

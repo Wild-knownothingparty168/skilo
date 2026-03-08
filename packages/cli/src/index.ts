@@ -44,7 +44,7 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Tiny sharing layer for agent skills')
-  .version('1.0.6');
+  .version('1.0.7');
 
 // Auth (optional)
 program.command('login').description('Login to publish skills').action(loginCommand);

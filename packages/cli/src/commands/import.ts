@@ -8,18 +8,20 @@ import { getClient } from '../api/client.js';
 import { isRegistrySkillRef } from '../utils/source-kind.js';
 import { findSkillFile } from '../utils/skill-file.js';
 import { type InstallOptions, describeInstallTargets, getInstallDirs } from '../utils/install-targets.js';
+import { exitWithError, logInfo, logSuccess, printNote, printUsage } from '../utils/output.js';
 
 export async function importCommand(source: string, options: InstallOptions = {}): Promise<void> {
   if (!source) {
-    console.error('Usage: skilo import <source>');
-    console.error('');
-    console.error('Sources:');
-    console.error('  github:user/repo        Import from GitHub');
-    console.error('  github:user/repo#path   Import subfolder');
-    console.error('  ./path/to/skill.skl     Import from .skl file');
-    console.error('  /local/path             Import from local path');
-    console.error('  https://skilo.xyz/s/... Import from share link');
-    process.exit(1);
+    printUsage([
+      'Usage: skilo import <source>',
+      '',
+      'Sources:',
+      '  github:user/repo        Import from GitHub',
+      '  github:user/repo#path   Import subfolder',
+      '  ./path/to/skill.skl     Import from .skl file',
+      '  /local/path             Import from local path',
+      '  https://skilo.xyz/s/... Import from share link',
+    ]);
   }
 
   let cleanupPath: string | null = null;
@@ -57,10 +59,9 @@ export async function importCommand(source: string, options: InstallOptions = {}
     // Install to skills directory
     await installSkill(skillPath, options);
 
-    console.log(`✓ Imported from ${source}`);
+    logSuccess(`Imported from ${source}`);
   } catch (e) {
-    console.error(`Import failed: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError(`Import failed: ${(e as Error).message}`);
   } finally {
     if (cleanupPath) {
       await rm(cleanupPath, { recursive: true, force: true });
@@ -79,14 +80,14 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   }
 
   const [, owner, repo, subpath = ''] = match;
-  console.log(`Fetching from GitHub: ${owner}/${repo}${subpath ? `/${subpath}` : ''}...`);
+  logInfo(`Fetching GitHub source ${owner}/${repo}${subpath ? `/${subpath}` : ''}`);
 
   // Use GitHub API to get tarball
   const tarballUrl = `https://api.github.com/repos/${owner}/${repo}/tarball`;
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.6',
+      'User-Agent': 'skilo-cli/1.0.7',
     },
   });
 
@@ -121,7 +122,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
 
 async function importFromSkl(source: string): Promise<{ skillPath: string; cleanupPath: string }> {
   const resolvedPath = resolve(source);
-  console.log(`Extracting .skl file: ${resolvedPath}...`);
+  logInfo(`Extracting bundle ${resolvedPath}`);
 
   const tempDir = await createTempDir(`skilo-import-skl-${Date.now()}`);
 
@@ -141,7 +142,7 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
     throw new Error('Invalid share link format');
   }
 
-  console.log(`Resolving share link: ${token}...`);
+  logInfo(`Resolving share link ${token}`);
 
   const client = await getClient();
 
@@ -199,7 +200,7 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
 }
 
 async function importFromUrl(source: string): Promise<{ skillPath: string; cleanupPath: string }> {
-  console.log(`Downloading from URL: ${source}...`);
+  logInfo(`Downloading ${source}`);
 
   const response = await fetch(source);
   if (!response.ok) {
@@ -228,7 +229,7 @@ async function importFromUrl(source: string): Promise<{ skillPath: string; clean
 
 async function importFromLocalPath(source: string): Promise<string> {
   const resolvedPath = resolve(source);
-  console.log(`Importing from local path: ${resolvedPath}...`);
+  logInfo(`Reading local skill ${resolvedPath}`);
 
   // Validate SKILL.md exists
   if (!await findSkillFile(resolvedPath)) {
@@ -256,10 +257,11 @@ async function installSkill(skillPath: string, options: InstallOptions = {}): Pr
     await rm(targetDir, { recursive: true, force: true });
     await mkdir(targetDir, { recursive: true });
     await cp(skillPath, targetDir, { recursive: true });
-    console.log(`✓ Installed to ${targetDir}`);
+    printNote('installed to', targetDir);
   }
 
-  console.log(`✓ Installed for ${describeInstallTargets(options)}`);
+  logSuccess('Install complete');
+  printNote('targets', describeInstallTargets(options));
 }
 
 async function promptPassword(): Promise<string> {

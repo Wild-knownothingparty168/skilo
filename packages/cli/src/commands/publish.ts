@@ -9,6 +9,7 @@ import { generateAnonName, generateClaimToken } from '../anon-names.js';
 import { validateSkillContent } from '../manifest.js';
 import { loadOrGenerateKeys, sign, encodeBase64Url } from '../utils/signing.js';
 import { readSkillContent } from '../utils/skill-file.js';
+import { blankLine, exitWithError, logSuccess, logWarn, printNote, printPrimary, printSection } from '../utils/output.js';
 
 async function createTarball(cwd: string, skillFile: string): Promise<{ buffer: Buffer; checksum: string }> {
   const tempDir = await mkdtemp(join(tmpdir(), 'skilo-publish-'));
@@ -31,20 +32,23 @@ async function createTarball(cwd: string, skillFile: string): Promise<{ buffer: 
 export async function publishCommand(path?: string, options?: { sign?: boolean }): Promise<void> {
   try {
     const { manifest, namespace, claimToken, isListed } = await publishLocalSkill(path, options);
+    const version = manifest.version || '0.1.0';
+    const ref = `@${namespace}/${manifest.name}@${version}`;
 
-    console.log(`\n✓ Published @${namespace}/${manifest.name}@${manifest.version || '0.1.0'}`);
+    logSuccess(`Published ${ref}`);
+    printPrimary(ref);
 
     if (!isListed && claimToken) {
-      console.log(`  🔐 Claim token: ${claimToken}`);
-      console.log(`\n  To claim this skill and make it public:`);
-      console.log(`    skilo login`);
-      console.log(`    skilo claim @${namespace}/${manifest.name} --token ${claimToken}`);
+      blankLine();
+      printSection('Claim this skill');
+      printNote('claim token', claimToken);
+      printNote('step 1', 'skilo login');
+      printNote('step 2', `skilo claim @${namespace}/${manifest.name} --token ${claimToken}`);
     } else if (isListed) {
-      console.log('  (public)');
+      printNote('visibility', 'public');
     }
   } catch (e) {
-    console.error(`Publish failed: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError(`Publish failed: ${(e as Error).message}`);
   }
 }
 
@@ -79,9 +83,9 @@ export async function publishLocalSkill(
       const sig = await sign(checksumBytes, keys.privateKey);
       signature = encodeBase64Url(sig);
       publicKey = encodeBase64Url(keys.publicKey);
-      console.log('✓ Signed skill bundle');
+      logSuccess('Signed skill bundle');
     } catch (e) {
-      console.warn('Warning: Could not sign skill:', (e as Error).message);
+      logWarn(`Could not sign skill: ${(e as Error).message}`);
     }
   }
 
@@ -98,9 +102,9 @@ export async function publishLocalSkill(
     try {
       await mkdir(join(homedir(), '.skilo', 'claims'), { recursive: true });
       await writeFile(claimFile, claimToken, 'utf-8');
-      console.log(`📝 Saved claim token to ${claimFile}`);
+      printNote('claim file', claimFile);
     } catch (e) {
-      console.warn(`Warning: Could not save claim token: ${(e as Error).message}`);
+      logWarn(`Could not save claim token: ${(e as Error).message}`);
     }
   }
 

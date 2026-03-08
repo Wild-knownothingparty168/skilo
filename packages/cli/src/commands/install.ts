@@ -8,6 +8,7 @@ import { mkdir, rm, unlink } from 'node:fs/promises';
 import * as crypto from 'node:crypto';
 import { isRegistrySkillRef } from '../utils/source-kind.js';
 import { type InstallOptions, describeInstallTargets, getInstallDirs } from '../utils/install-targets.js';
+import { exitWithError, logInfo, logSuccess, printNote, printUsage } from '../utils/output.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string; version?: string } {
   const parts = skill.split('@');
@@ -20,8 +21,7 @@ function parseSkillRef(skill: string): { namespace: string; name: string; versio
 
 export async function installCommand(skill: string, options: InstallOptions = {}): Promise<void> {
   if (!skill) {
-    console.error('Usage: skilo install <skill|source>');
-    process.exit(1);
+    printUsage(['Usage: skilo install <skill|source>']);
   }
 
   try {
@@ -38,7 +38,7 @@ export async function installCommand(skill: string, options: InstallOptions = {}
     const metadata = await client.getSkillMetadata(namespace, name);
     const versionToInstall = version || metadata.version;
 
-    console.log(`Installing ${namespace}/${name}@${versionToInstall}...`);
+    logInfo(`Installing ${namespace}/${name}@${versionToInstall}`);
 
     // Get verification info
     const verifyResponse = await fetch(`${client.baseUrl}/v1/skills/${namespace}/${name}/verify?version=${versionToInstall}`);
@@ -47,7 +47,7 @@ export async function installCommand(skill: string, options: InstallOptions = {}
       const verifyData = await verifyResponse.json();
       expectedChecksum = verifyData.checksum;
       if (verifyData.signature) {
-        console.log('✓ Skill is signed');
+        printNote('signature', 'present');
       }
     }
 
@@ -58,12 +58,9 @@ export async function installCommand(skill: string, options: InstallOptions = {}
     if (expectedChecksum) {
       const actualChecksum = crypto.createHash('sha256').update(Buffer.from(tarball)).digest('hex');
       if (actualChecksum !== expectedChecksum) {
-        console.error('❌ Checksum verification failed!');
-        console.error(`  Expected: ${expectedChecksum}`);
-        console.error(`  Actual:   ${actualChecksum}`);
-        process.exit(1);
+        exitWithError(`Checksum verification failed. expected=${expectedChecksum} actual=${actualChecksum}`);
       }
-      console.log('✓ Checksum verified');
+      printNote('checksum', 'verified');
     }
 
     const installDirs = getInstallDirs(options);
@@ -85,12 +82,12 @@ export async function installCommand(skill: string, options: InstallOptions = {}
       await pipeline(readStream, createGunzip(), extract({ cwd: skillDir }));
       await unlink(tempPath);
 
-      console.log(`✓ Installed to ${skillDir}`);
+      printNote('installed to', skillDir);
     }
 
-    console.log(`✓ Installed ${namespace}/${name}@${versionToInstall} for ${describeInstallTargets(options)}`);
+    logSuccess(`Installed ${namespace}/${name}@${versionToInstall}`);
+    printNote('targets', describeInstallTargets(options));
   } catch (e) {
-    console.error(`Install failed: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError(`Install failed: ${(e as Error).message}`);
   }
 }

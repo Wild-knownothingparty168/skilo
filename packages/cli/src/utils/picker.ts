@@ -1,5 +1,6 @@
 import { createInterface } from 'node:readline';
 import type { DiscoveredSkill } from '../tool-dirs.js';
+import { isInteractiveOutput, printSection, printNote } from './output.js';
 
 export interface PickerResult {
   selected: DiscoveredSkill[];
@@ -8,21 +9,28 @@ export interface PickerResult {
 
 function render(skills: DiscoveredSkill[], selected: boolean[]): string {
   const lines: string[] = [];
+  const selectedCount = selected.filter(Boolean).length;
+  lines.push('Select skills to share');
+  lines.push(`${selectedCount} of ${skills.length} selected`);
+  lines.push('');
+
   for (let i = 0; i < skills.length; i++) {
     const check = selected[i] ? 'x' : ' ';
     const num = String(i + 1).padStart(String(skills.length).length);
-    lines.push(`  [${check}] ${num}. ${skills[i].name}`);
+    const tool = skills[i].tool ? ` (${skills[i].tool})` : '';
+    lines.push(`  [${check}] ${num}. ${skills[i].name}${tool}`);
     if (skills[i].description) {
       lines.push(`       ${''.padStart(String(skills.length).length)}${skills[i].description}`);
     }
   }
   lines.push('');
-  lines.push('Toggle: numbers (1 3), a=all, n=none, enter=confirm, q=cancel');
+  lines.push('Toggle with numbers like "1 3", then press enter.');
+  lines.push('Shortcuts: a=all, n=none, enter=confirm, q=cancel');
   return lines.join('\n');
 }
 
 export async function pickSkills(skills: DiscoveredSkill[]): Promise<PickerResult> {
-  if (!process.stdin.isTTY) {
+  if (!process.stdin.isTTY || !isInteractiveOutput()) {
     return { selected: skills, cancelled: false };
   }
 
@@ -30,7 +38,9 @@ export async function pickSkills(skills: DiscoveredSkill[]): Promise<PickerResul
   let rendered = render(skills, selected);
   let lineCount = rendered.split('\n').length;
 
-  process.stdout.write(rendered + '\n');
+  printSection('Interactive selection');
+  printNote('mode', 'Toggle skills, then press enter to continue');
+  process.stdout.write(`\n${rendered}\n`);
 
   const rl = createInterface({
     input: process.stdin,

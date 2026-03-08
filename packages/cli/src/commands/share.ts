@@ -4,6 +4,7 @@ import { resolveSkillLocation } from '../utils/skill-file.js';
 import { publishLocalSkill } from './publish.js';
 import { isKnownTool, discoverSkills } from '../tool-dirs.js';
 import { pickSkills } from '../utils/picker.js';
+import { blankLine, exitWithError, logError, logInfo, logSuccess, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string } {
   const parts = skill.split('/');
@@ -37,8 +38,9 @@ export async function shareCommand(
   }
 
   if (!skill) {
-    console.error('Usage: skilo share <path|namespace/name> [--one-time] [--expires 1h] [--uses 5] [--password]');
-    process.exit(1);
+    printUsage([
+      'Usage: skilo share <path|namespace/name> [--one-time] [--expires 1h] [--uses 5] [--password]',
+    ]);
   }
 
   try {
@@ -50,8 +52,7 @@ export async function shareCommand(
     if (options.expires) {
       const match = options.expires.match(/^(\d+)(h|d|m)$/);
       if (!match) {
-        console.error('Invalid expires format. Use: 1h, 2d, 30m');
-        process.exit(1);
+        exitWithError('Invalid expires format. Use 1h, 2d, or 30m.');
       }
       const value = parseInt(match[1]);
       const unit = match[2];
@@ -77,24 +78,23 @@ export async function shareCommand(
     );
 
     if (target.publishedVersion) {
-      console.log(`✓ Published @${target.namespace}/${target.name}@${target.publishedVersion} for sharing`);
+      logSuccess(`Published @${target.namespace}/${target.name}@${target.publishedVersion}`);
     }
 
-    console.log(`✓ Created share link for ${target.namespace}/${target.name}`);
-    console.log(`\n${result.url}`);
-    if (options.oneTime) console.log('  (one-time use)');
-    if (expiresAt) console.log(`  (expires: ${new Date(expiresAt).toISOString()})`);
-    if (options.uses) console.log(`  (max uses: ${options.uses})`);
-    if (options.password) console.log('  (password protected)');
+    logSuccess(`Share link ready for ${target.namespace}/${target.name}`);
+    printPrimary(result.url);
+    if (options.oneTime) printNote('mode', 'one-time');
+    if (expiresAt) printNote('expires', new Date(expiresAt).toISOString());
+    if (options.uses) printNote('max uses', String(options.uses));
+    if (options.password) printNote('password', 'required');
 
-    // QR code (ASCII representation)
-    if (options.qr) {
-      console.log('\nScan to install:');
-      console.log(generateQRCode(result.url));
+    if (options.qr && process.stdout.isTTY) {
+      blankLine();
+      printSection('Scan to install');
+      printPrimary(generateQRCode(result.url));
     }
   } catch (e) {
-    console.error(`Error: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError((e as Error).message);
   }
 }
 
@@ -118,15 +118,15 @@ async function bulkShareCommand(
   toolName: string,
   options: { oneTime?: boolean; expires?: string; uses?: number; password?: boolean; qr?: boolean; yes?: boolean }
 ): Promise<void> {
-  console.log(`Scanning ${toolName === 'all' ? 'all tools' : toolName} for skills...`);
+  logInfo(`Scanning ${toolName === 'all' ? 'all tools' : toolName} for skills`);
 
   const skills = await discoverSkills(toolName);
   if (skills.length === 0) {
-    console.log('No skills found.');
+    logInfo('No skills found.');
     return;
   }
 
-  console.log(`Found ${skills.length} skill(s):\n`);
+  logSuccess(`Found ${skills.length} skill${skills.length === 1 ? '' : 's'}`);
 
   let selected;
   if (options.yes) {
@@ -134,7 +134,7 @@ async function bulkShareCommand(
   } else {
     const result = await pickSkills(skills);
     if (result.cancelled || result.selected.length === 0) {
-      console.log('No skills selected.');
+      logInfo('No skills selected.');
       return;
     }
     selected = result.selected;
@@ -145,8 +145,7 @@ async function bulkShareCommand(
   if (options.expires) {
     const match = options.expires.match(/^(\d+)(h|d|m)$/);
     if (!match) {
-      console.error('Invalid expires format. Use: 1h, 2d, 30m');
-      process.exit(1);
+      exitWithError('Invalid expires format. Use 1h, 2d, or 30m.');
     }
     const value = parseInt(match[1]);
     const unit = match[2];
@@ -165,14 +164,15 @@ async function bulkShareCommand(
   const client = await getClient();
   const total = selected.length;
 
-  console.log(`\nPublishing ${total} skill(s)...`);
+  blankLine();
+  logInfo(`Publishing ${total} skill${total === 1 ? '' : 's'}`);
 
   const successes: { name: string; token: string; url: string }[] = [];
   const failures: { name: string; error: string }[] = [];
 
   for (let i = 0; i < total; i++) {
     const skill = selected[i];
-    process.stdout.write(`  [${i + 1}/${total}] ${skill.name} ...`);
+    logInfo(`[${i + 1}/${total}] ${skill.name}`);
 
     try {
       const { manifest, namespace } = await publishLocalSkill(skill.path);
@@ -184,38 +184,44 @@ async function bulkShareCommand(
         options.uses,
         password
       );
-      console.log(' done');
+      logSuccess(`Shared ${namespace}/${manifest.name}`);
       successes.push({ name: skill.name, token: result.token, url: result.url });
     } catch (e) {
-      console.log(` FAILED (${(e as Error).message})`);
+      logError(`${skill.name}: ${(e as Error).message}`);
       failures.push({ name: skill.name, error: (e as Error).message });
     }
   }
-
-  console.log('');
 
   if (successes.length >= 2) {
     try {
       const tokens = successes.map((s) => s.token);
       const packResult = await client.createPack(toolName, tokens);
-      console.log(`Pack (${packResult.count} skills): ${packResult.url}`);
+      blankLine();
+      logSuccess(`Pack ready with ${packResult.count} skills`);
+      printPrimary(packResult.url);
     } catch (e) {
-      console.error(`Pack creation failed: ${(e as Error).message}`);
+      logError(`Pack creation failed: ${(e as Error).message}`);
     }
   }
 
   if (successes.length > 0) {
+    blankLine();
+    printSection('Individual links');
     const maxNameLen = Math.max(...successes.map((s) => s.name.length));
-    console.log('Individual links:');
     for (const s of successes) {
-      console.log(`  ${s.name.padEnd(maxNameLen)}  \u2192 ${s.url}`);
+      if (process.stdout.isTTY) {
+        printPrimary(`${s.name.padEnd(maxNameLen)}  ${s.url}`);
+      } else {
+        printPrimary(`${s.name}\t${s.url}`);
+      }
     }
   }
 
   if (failures.length > 0) {
-    console.log(`\nFailed (${failures.length}):`);
+    blankLine();
+    printSection(`Failed (${failures.length})`);
     for (const f of failures) {
-      console.log(`  ${f.name}: ${f.error}`);
+      logError(`${f.name}: ${f.error}`);
     }
   }
 }
