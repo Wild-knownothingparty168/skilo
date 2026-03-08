@@ -2,17 +2,18 @@
 
 ## Quick start
 
-Install the CLI, then share or install any skill with one command.
+Start with npx. The first successful interactive run also installs the global `skilo` binary for later use.
 
 ```
-$ npm i -g skilo-cli
-$ skilo share ./code-reviewer
+$ npx skilo-cli share ./code-reviewer
 → skilo.xyz/s/a3xK9mP2
 $ skilo add skilo.xyz/s/a3xK9mP2
 ✓ Installed code-reviewer
 ```
 
 No account required. Skills are published anonymously by default. You can claim them later with `skilo claim`.
+
+Agents should prefer `npx skilo-cli --json` or `https://skilo.xyz/llms.txt`.
 
 ## CLI commands
 

@@ -91,17 +91,19 @@ function Docs() {
         <section className="flex flex-col gap-2">
           <p className="font-medium">Quick start</p>
           <p className="text-stone-500">
-            Install the CLI, then share or install any skill with one command.
+            Start with npx. The first successful interactive run also installs the global <Code>skilo</Code> binary for later use.
           </p>
           <Terminal lines={[
-            { cmd: "npm i -g skilo-cli" },
-            { cmd: "skilo share ./code-reviewer" },
+            { cmd: "npx skilo-cli share ./code-reviewer" },
             { out: "\u2192 skilo.xyz/s/a3xK9mP2" },
             { cmd: "skilo add skilo.xyz/s/a3xK9mP2" },
             { out: "\u2713 Installed code-reviewer" },
           ]} />
           <p className="text-stone-500">
             No account required. Skills are published anonymously by default. You can claim them later with <Code>skilo claim</Code>.
+          </p>
+          <p className="text-stone-500">
+            Agents should prefer <Code copy>npx skilo-cli --json</Code> or <Code copy>https://skilo.xyz/llms.txt</Code>.
           </p>
         </section>
 

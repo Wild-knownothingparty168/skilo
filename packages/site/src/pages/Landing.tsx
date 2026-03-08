@@ -13,7 +13,7 @@ function Landing() {
   const [installCopied, setInstallCopied] = useState(false);
 
   function handleInstallCopy() {
-    navigator.clipboard.writeText("npm i -g skilo-cli");
+    navigator.clipboard.writeText("npx skilo-cli");
     setInstallCopied(true);
     setTimeout(() => setInstallCopied(false), 1500);
   }
@@ -89,7 +89,7 @@ function Landing() {
           <div className="mt-3 flex items-center gap-3">
             <div className="flex items-center gap-2">
               <code className="rounded bg-stone-100 px-3 py-2 font-mono text-sm whitespace-nowrap">
-                npm i -g skilo-cli
+                npx skilo-cli
               </code>
               <button type="button" onClick={handleInstallCopy} className={PRIMARY_BTN}>
                 <CopyIcon className="h-4 w-4" />
@@ -99,7 +99,7 @@ function Landing() {
           </div>
 
           <p className="text-xs text-stone-400 mt-1">
-            No account required.{" "}
+            First successful interactive runs bootstrap the global <code className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[11px]">skilo</code> binary. No account required.{" "}
             <Link to="/docs" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">
               Read the docs&nbsp;&rarr;
             </Link>
@@ -117,7 +117,7 @@ function Landing() {
             <div className="bg-stone-950 px-5 py-5 font-mono text-[13px] leading-6">
               <div>
                 <span className="text-stone-600">$ </span>
-                <span className="text-stone-200">skilo share ./code-reviewer</span>
+                <span className="text-stone-200">npx skilo-cli share ./code-reviewer</span>
               </div>
               <div className="pl-4 text-emerald-400/70">&rarr; skilo.xyz/s/a3xK9mP2</div>
               <div className="h-4" />
@@ -162,6 +162,15 @@ function Landing() {
               </p>
               <p className="text-stone-500 text-sm mt-1">
                 <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo add</code> and <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo import</code> accept links, refs, bundles, GitHub sources, and local paths. Use target flags like <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--cc</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--codex</code>, or <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--oc</code> to land in the right tool.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm">
+                <span className="font-medium">Start cleanly</span>
+              </p>
+              <p className="text-stone-500 text-sm mt-1">
+                Humans can start with <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">npx skilo-cli</code>. Agents should use <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">npx skilo-cli --json</code> or read <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">/llms.txt</code>.
               </p>
             </div>
 

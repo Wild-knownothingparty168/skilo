@@ -1,20 +1,22 @@
 # Skilo
 
-> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Cursor, Codex, and every AI coding tool.
+> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
 
 Skilo is a CLI and registry for sharing agent skills. Skills are directories containing a SKILL.md file with YAML frontmatter and markdown instructions. The CLI publishes skills to the registry and generates shareable links. Recipients install with one command. No account required.
 
 ## Quick start
 
 ```
-$ npm i -g skilo-cli
-$ skilo share ./code-reviewer
+$ npx skilo-cli share ./code-reviewer
 → skilo.xyz/s/a3xK9mP2
 $ skilo add skilo.xyz/s/a3xK9mP2
 ✓ Installed code-reviewer
 ```
 
 No account required. Skills are published anonymously by default. You can claim them later with `skilo claim`.
+
+For humans, the first successful interactive `npx skilo-cli ...` run also installs the global `skilo` binary.
+For agents, prefer `npx skilo-cli --json` and parse the structured output.
 
 ## CLI commands
 

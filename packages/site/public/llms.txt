@@ -12,7 +12,8 @@ If you are an agent and need to decide what to do:
 2. Use `skilo add <source>` to install, `skilo inspect <source>` to review, and `skilo share <path>` to publish.
 3. Prefer `--json` on CLI commands when you need structured output.
 
-- Install: `npm i -g skilo-cli`
+- Human bootstrap: `npx skilo-cli` (interactive runs install the global `skilo` binary after the first successful run)
+- Agent bootstrap: `npx skilo-cli --json`
 - Share a skill: `skilo share ./my-skill` → returns a link
 - Install a skill: `skilo add skilo.xyz/s/<token>` → downloads, verifies, installs
 - Bulk share: `skilo share claude` → shares all skills from a tool at once
