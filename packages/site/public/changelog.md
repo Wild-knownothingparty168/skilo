@@ -6,6 +6,7 @@
 
 ### Added
 
+- Add live stats to the landing page (`f1982ad`)
 - Support skills.sh shorthand installs (`0c8f1bc`)
 - Add subset-aware pack installs (`fe66443`)
 - Add tool-to-tool skill sync flows (`919140b`)
