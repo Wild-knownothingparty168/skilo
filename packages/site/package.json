@@ -10,6 +10,7 @@
     "deploy": "wrangler pages deploy dist"
   },
   "dependencies": {
+    "@lobehub/icons": "^5.0.1",
     "lucide-react": "^0.460.0",
     "marked": "^17.0.4",
     "react": "^18.3.1",

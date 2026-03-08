@@ -1,6 +1,18 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { SkiloMark, CopyIcon, ExternalLinkIcon, HamburgerIcon } from "../components/icons";
+import {
+  Claude,
+  Codex,
+  Cursor,
+  Amp,
+  Windsurf,
+  OpenCode,
+  Cline,
+  RooCode,
+  OpenClaw,
+  Cloudflare,
+} from "@lobehub/icons";
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 
@@ -184,10 +196,35 @@ function Landing() {
             </div>
           </div>
         </div>
+
+        {/* ── Supported tools ── */}
+        <div className="mt-10">
+          <p className="text-xs font-medium uppercase tracking-widest text-stone-400 mb-4">Works with</p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {[
+              { Icon: Claude, name: "Claude Code" },
+              { Icon: Codex, name: "Codex" },
+              { Icon: Cursor, name: "Cursor" },
+              { Icon: Amp, name: "Amp" },
+              { Icon: Windsurf, name: "Windsurf" },
+              { Icon: OpenCode, name: "OpenCode" },
+              { Icon: Cline, name: "Cline" },
+              { Icon: RooCode, name: "Roo" },
+              { Icon: OpenClaw, name: "OpenClaw" },
+            ].map(({ Icon, name }) => (
+              <span key={name} className="flex items-center gap-1.5 text-stone-400">
+                <Icon size={16} />
+                <span className="text-xs">{name}</span>
+              </span>
+            ))}
+            <span className="text-xs text-stone-300">and more</span>
+          </div>
+        </div>
       </main>
 
       {/* ── Footer ── */}
-      <footer className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-2 p-5 pt-0 text-sm text-stone-500 lg:p-10 lg:pt-0">
+      <footer className="mx-auto flex max-w-6xl flex-col items-center gap-3 p-5 pt-0 text-sm text-stone-500 lg:p-10 lg:pt-0">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
         <Link to="/docs" className={FOOTER_LINK}>Docs</Link>
         <Link to="/claim" className={FOOTER_LINK}>Claim</Link>
         <a
@@ -199,6 +236,11 @@ function Landing() {
           GitHub
           <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 align-baseline" />
         </a>
+        </div>
+        <span className="flex items-center gap-1.5 text-xs text-stone-300">
+          <Cloudflare size={14} />
+          Runs on Cloudflare
+        </span>
       </footer>
     </>
   );
