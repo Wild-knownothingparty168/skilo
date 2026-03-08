@@ -102,6 +102,21 @@ skilo import ./skill.skl
 
 Skilo now supports Vercel-style multi-skill GitHub repos directly. Use `--list` to inspect discovered skills, `--skill <name>` to install a specific one, or `--all` to install everything in the source repo.
 
+### Copy skills between tools
+
+```bash
+# Sync selected Claude Code skills into OpenCode
+skilo sync claude opencode
+
+# Non-interactive: sync everything from Claude Code into OpenCode
+skilo sync claude opencode --all
+
+# Use add/import with a tool as the local source
+skilo add claude --oc --all
+skilo import claude --skill reviewer --oc
+skilo add codex --cursor
+```
+
 Without target flags:
 - if exactly one supported tool is detected, Skilo installs there automatically
 - if multiple tools are detected, TTY runs prompt once and non-interactive runs return a structured no-op until you pass a target or set `SKILO_TARGETS`
@@ -135,6 +150,7 @@ skilo inspect https://skilo.xyz/s/a3xK9mP2 --json
 | `skilo inspect <skill>` | View skill details without installing |
 | `skilo export [path]` | Export to .skl file |
 | `skilo import <source>` | Import from GitHub, .skl, or local path |
+| `skilo sync [source] [targets...]` | Sync local project skills or copy skills between tools |
 | `skilo pack [sources...]` | Create a .tgz bundle or a curated shareable pack |
 | `skilo publish [path]` | Publish to the registry |
 | `skilo init [name]` | Create a new skill |

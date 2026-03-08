@@ -43,6 +43,12 @@ Install a skill or pack. Accepts a share URL, pack URL, namespace/name, .skl fil
 - Non-interactive runs should pass explicit flags or set `SKILO_TARGETS`.
 - If nothing is detected, Skilo falls back to Claude Code.
 
+Tool names also work as local sources. Examples:
+
+- `skilo add claude --oc --all`
+- `skilo import claude --skill reviewer --oc`
+- `skilo sync claude opencode`
+
 ### `skilo publish`
 
 Publish the current directory to the registry. Reads SKILL.md for metadata.

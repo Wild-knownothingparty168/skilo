@@ -10,7 +10,7 @@ export interface PickerResult {
 function render(skills: DiscoveredSkill[], selected: boolean[]): string {
   const lines: string[] = [];
   const selectedCount = selected.filter(Boolean).length;
-  lines.push('Select skills to share');
+  lines.push('Select skills');
   lines.push(`${selectedCount} of ${skills.length} selected`);
   lines.push('');
 

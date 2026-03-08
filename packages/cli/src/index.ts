@@ -48,7 +48,7 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Share agent skills with a link. No repo required.')
-  .version('1.0.13');
+  .version('1.0.14');
 program.option('--json', 'Emit machine-readable JSON');
 
 program.showSuggestionAfterError(true);
@@ -58,6 +58,7 @@ Primary commands:
   skilo share ./my-skill
   skilo add https://skilo.xyz/s/abc123
   skilo pack ./skill-a namespace/skill-b https://skilo.xyz/s/abc123 --name "Starter pack"
+  skilo sync claude opencode
 
 Agent entrypoints:
   skilo --json
@@ -84,12 +85,12 @@ program.command('list').description('List installed skills').action(listCommand)
 addInstallTargetOptions(
   program
     .command('add <skill>')
-    .description('Add a skill (alias for install)')
+    .description('Add a skill, pack, repo source, or local tool source')
 ).action((skill, options) => installCommand(skill, options));
 addInstallTargetOptions(
   program
     .command('install <skill>')
-    .description('Install a skill')
+    .description('Install a skill, pack, repo source, or local tool source')
 ).action((skill, options) => installCommand(skill, options));
 program.command('update <skill>').description('Update a skill').action(updateCommand);
 
@@ -97,7 +98,7 @@ program.command('update <skill>').description('Update a skill').action(updateCom
 addInstallTargetOptions(
   program
     .command('import <source>')
-    .description('Import from GitHub, .skl, URL, or local path')
+    .description('Import from GitHub, .skl, URL, local path, or local tool source')
 ).action(importCommand);
 program
   .command('export [path]')
@@ -148,7 +149,12 @@ program
 program.command('lock').description('Generate lockfile').action(lockCommand);
 program.command('verify').description('Verify lockfile').action(verifyLockCommand);
 program.command('audit').description('Audit installed skills').action(auditCommand);
-program.command('sync').description('Sync skills with lockfile').action(syncCommand);
+addInstallTargetOptions(
+  program
+    .command('sync [source] [targets...]')
+    .description('Sync skills with lockfile or copy skills between tools')
+    .option('--force', 'Re-sync regardless of version')
+).action((source, targets, options) => syncCommand({ ...options, source, targets }));
 
 // Development / Packs
 program.command('init [name]').description('Create new skill').action((name) => initCommand(name));
@@ -176,10 +182,12 @@ function printInteractiveWelcome(): void {
   printPrimary('    skilo add https://skilo.xyz/p/abc123');
   printPrimary('  Curate a pack');
   printPrimary('    skilo pack ./reviewer namespace/design-system --name "Starter pack"');
+  printPrimary('  Sync between tools');
+  printPrimary('    skilo sync claude opencode');
   blankLine();
 
   printSection('Inputs');
-  printPrimary('  Skilo links, pack links, namespace/name refs, GitHub repos, bundles, local paths');
+  printPrimary('  Skilo links, pack links, namespace/name refs, GitHub repos, bundles, local paths, local tool sources');
   blankLine();
 
   printSection('Install behavior');
@@ -212,6 +220,7 @@ function printMachineWelcome(): void {
       addLink: 'skilo add https://skilo.xyz/s/abc123',
       addPack: 'skilo add https://skilo.xyz/p/abc123',
       pack: 'skilo pack ./reviewer namespace/design-system --name "Starter pack"',
+      syncTools: 'skilo sync claude opencode',
     },
     compatibilityAliases: {
       install: 'skilo install <source>',
@@ -224,6 +233,7 @@ function printMachineWelcome(): void {
       'github-repo',
       'bundle',
       'local-path',
+      'local-tool-source',
     ],
     supportedTargets: [
       'claude-code',

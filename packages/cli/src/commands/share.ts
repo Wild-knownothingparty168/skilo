@@ -2,7 +2,7 @@ import { getClient } from '../api/client.js';
 import { createInterface } from 'node:readline';
 import { resolveSkillLocation } from '../utils/skill-file.js';
 import { publishLocalSkill } from './publish.js';
-import { isKnownTool, discoverSkills } from '../tool-dirs.js';
+import { isKnownTool, discoverSkills, resolveToolName } from '../tool-dirs.js';
 import { pickSkills } from '../utils/picker.js';
 import { blankLine, exitWithError, isJsonOutput, logError, logInfo, logSuccess, printJson, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
 
@@ -43,7 +43,7 @@ export async function shareCommand(
   options: { oneTime?: boolean; expires?: string; uses?: number; password?: boolean; qr?: boolean; yes?: boolean } = {}
 ): Promise<void> {
   if (isKnownTool(skill)) {
-    await bulkShareCommand(skill, options);
+    await bulkShareCommand(resolveToolName(skill) || skill, options);
     return;
   }
 

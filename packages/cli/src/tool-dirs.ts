@@ -22,8 +22,59 @@ export const TOOL_MAP: Record<string, string[]> = {
   roo: ['~/.roo/skills/'],
 };
 
+export type ToolName = keyof typeof TOOL_MAP;
+export type ToolSourceName = ToolName | 'all';
+
+const TOOL_LABELS: Record<ToolName, string> = {
+  claude: 'Claude Code',
+  codex: 'Codex',
+  opencode: 'OpenCode',
+  openclaw: 'OpenClaw',
+  cursor: 'Cursor',
+  amp: 'Amp',
+  windsurf: 'Windsurf',
+  cline: 'Cline',
+  roo: 'Roo',
+};
+
+const TOOL_ALIASES: Record<string, ToolName> = {
+  claude: 'claude',
+  cc: 'claude',
+  'claude-code': 'claude',
+  codex: 'codex',
+  cursor: 'cursor',
+  amp: 'amp',
+  windsurf: 'windsurf',
+  oc: 'opencode',
+  opencode: 'opencode',
+  cline: 'cline',
+  roo: 'roo',
+  openclaw: 'openclaw',
+};
+
+export function resolveToolName(name: string): ToolSourceName | null {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  if (normalized === 'all') {
+    return 'all';
+  }
+
+  return TOOL_ALIASES[normalized] || null;
+}
+
+export function getToolLabel(name: ToolSourceName): string {
+  if (name === 'all') {
+    return 'All supported tools';
+  }
+
+  return TOOL_LABELS[name];
+}
+
 export function isKnownTool(name: string): boolean {
-  return name === 'all' || name in TOOL_MAP;
+  return resolveToolName(name) !== null;
 }
 
 function parseFrontmatter(content: string): { name?: string; description?: string } {
@@ -46,7 +97,7 @@ function parseFrontmatter(content: string): { name?: string; description?: strin
   return result;
 }
 
-export async function discoverSkills(toolName: string): Promise<DiscoveredSkill[]> {
+export async function discoverSkills(toolName: ToolSourceName): Promise<DiscoveredSkill[]> {
   const tools = toolName === 'all'
     ? Object.entries(TOOL_MAP)
     : [[toolName, TOOL_MAP[toolName]] as [string, string[]]];

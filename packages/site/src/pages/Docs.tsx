@@ -125,7 +125,17 @@ function Docs() {
                 <li>Auto-installs into a detected tool when exactly one is found.</li>
                 <li>Prompts once in interactive runs when multiple tools are detected.</li>
                 <li>Use explicit flags or <Code>SKILO_TARGETS</Code> in non-interactive environments.</li>
+                <li>Tool names also work as local sources: <Code>skilo add claude --oc --all</Code>.</li>
               </ul>
+            </div>
+
+            <div>
+              <p className="text-sm">
+                <Code>skilo sync &lt;source&gt; &lt;target&gt;</Code>
+              </p>
+              <p className="text-stone-500 text-sm mt-1">
+                Copy selected skills directly between tools. For example: <Code>skilo sync claude opencode</Code>.
+              </p>
             </div>
 
             <div>

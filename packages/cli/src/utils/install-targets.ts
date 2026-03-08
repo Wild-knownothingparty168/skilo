@@ -182,6 +182,10 @@ function getTargetsFromOptions(options: InstallOptions = {}): InstallTarget[] {
   return [...new Set(targets)];
 }
 
+export function getExplicitInstallTargets(options: InstallOptions = {}): InstallTarget[] {
+  return getTargetsFromOptions(options);
+}
+
 function parseTargetToken(token: string): InstallTarget | null {
   const normalized = token.trim().toLowerCase();
   if (!normalized) {
@@ -190,6 +194,10 @@ function parseTargetToken(token: string): InstallTarget | null {
 
   const match = INSTALL_TARGETS.find((entry) => entry.aliases.includes(normalized));
   return match?.key || null;
+}
+
+export function parseInstallTargetTokens(tokens: string[]): InstallTarget[] {
+  return [...new Set(tokens.map(parseTargetToken).filter((value): value is InstallTarget => value !== null))];
 }
 
 function getTargetsFromEnv(): InstallTarget[] {

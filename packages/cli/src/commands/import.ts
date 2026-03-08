@@ -24,9 +24,12 @@ import {
   normalizeGitHubSource,
   selectRepoSkills,
 } from '../utils/repo-skills.js';
+import { quoteShellValue, selectToolSourceSkills } from '../utils/tool-source.js';
+import { discoverSkills, getToolLabel, resolveToolName } from '../tool-dirs.js';
 import { parsePackToken } from './share.js';
 
-function classifyImportSource(source: string): 'registry' | 'pack' | 'github' | 'bundle' | 'share' | 'url' | 'local' {
+function classifyImportSource(source: string): 'tool' | 'registry' | 'pack' | 'github' | 'bundle' | 'share' | 'url' | 'local' {
+  if (resolveToolName(source)) return 'tool';
   if (parsePackToken(source)) return 'pack';
   if (isGitHubRepoLike(source)) return 'github';
   if (source.endsWith('.skl')) return 'bundle';
@@ -34,6 +37,36 @@ function classifyImportSource(source: string): 'registry' | 'pack' | 'github' | 
   if (source.startsWith('http://') || source.startsWith('https://')) return 'url';
   if (source.startsWith('.') || source.startsWith('/') || source.startsWith('~')) return 'local';
   return 'registry';
+}
+
+function emitToolSkillSelectionNoop(
+  source: string,
+  sourceLabel: string,
+  availableSkills: Array<{ name: string; tool: string }>
+): void {
+  const firstSkill = availableSkills[0]?.name;
+  const nextCommand = firstSkill
+    ? `skilo add ${source} --skill ${quoteShellValue(firstSkill)}`
+    : `skilo add ${source} --all`;
+
+  if (isJsonOutput()) {
+    printJson({
+      command: 'add',
+      source,
+      resolvedType: 'tool',
+      skillCount: 0,
+      availableSkills: availableSkills.map((skill) => ({
+        name: skill.name,
+        tool: skill.tool,
+      })),
+      installedTargets: [],
+      nextCommand,
+      message: `Multiple skills found in ${sourceLabel}. Pass --all, use --skill <name>, or run in a TTY.`,
+    });
+    return;
+  }
+
+  exitWithError(`Multiple skills found in ${sourceLabel}. Pass --all, use --skill <name>, or run in a TTY.`);
 }
 
 function emitTargetSelectionNoop(
@@ -81,6 +114,7 @@ export async function importCommand(source: string, options: InstallOptions = {}
       '  owner/repo --skill foo  Import a skill from a GitHub repo',
       '  ./path/to/skill.skl     Import from .skl file',
       '  /local/path             Import from local path',
+      '  claude --oc             Import from a local tool source',
       '  https://skilo.xyz/s/... Import from share link',
     ]);
   }
@@ -91,6 +125,99 @@ export async function importCommand(source: string, options: InstallOptions = {}
     source = normalizeSourceInput(source);
     const prefersRepoSelection = Boolean(options.list || options.all || options.skill?.length);
     const resolvedType = classifyImportSource(source);
+    const sourceTool = resolveToolName(source);
+
+    if (sourceTool) {
+      const sourceLabel = getToolLabel(sourceTool);
+      const availableSkills = await discoverSkills(sourceTool);
+
+      if (options.list) {
+        if (isJsonOutput()) {
+          printJson({
+            command: 'import',
+            source,
+            mode: 'list',
+            resolvedType: 'tool',
+            sourceTool,
+            skills: availableSkills.map((skill) => ({
+              name: skill.name,
+              description: skill.description,
+              path: skill.path,
+              tool: skill.tool,
+            })),
+          });
+        } else if (availableSkills.length === 0) {
+          logInfo(`No skills found in ${sourceLabel}.`);
+        } else {
+          logInfo(`Found ${availableSkills.length} skill${availableSkills.length === 1 ? '' : 's'} in ${sourceLabel}:`);
+          for (const skill of availableSkills) {
+            printNote('skill', `${skill.name}${skill.tool ? ` (${skill.tool})` : ''}`);
+          }
+        }
+        return;
+      }
+
+      const selection = await selectToolSourceSkills(source, options);
+      if (selection.mode === 'needs_selection') {
+        emitToolSkillSelectionNoop(source, selection.sourceLabel, selection.availableSkills);
+        return;
+      }
+
+      if (selection.mode === 'cancelled') {
+        logInfo('No skills selected.');
+        if (isJsonOutput()) {
+          printJson({
+            command: 'add',
+            source,
+            resolvedType: 'tool',
+            sourceTool: selection.sourceTool,
+            skillCount: 0,
+            installedTargets: [],
+            cancelled: true,
+          });
+        }
+        return;
+      }
+
+      const installResolution = await resolveInstallTargets(options);
+      if (installResolution.mode === 'needs_target' || (installResolution.mode === 'selected' && installResolution.targets.length === 0)) {
+        emitTargetSelectionNoop(source, 'tool', selection.selectedSkills.length, installResolution);
+        return;
+      }
+
+      const installResults = [];
+      for (const selected of selection.selectedSkills) {
+        logInfo(`Installing ${selected.name} from ${selection.sourceLabel}`);
+        installResults.push(await installSkill(selected.path, options, installResolution));
+      }
+
+      logSuccess(`Imported ${installResults.length} skill${installResults.length === 1 ? '' : 's'} from ${selection.sourceLabel}`);
+
+      if (isJsonOutput()) {
+        printJson({
+          command: 'add',
+          source,
+          resolvedType: 'tool',
+          sourceTool: selection.sourceTool,
+          sourceLabel: selection.sourceLabel,
+          skillCount: installResults.length,
+          detectedTargets: installResolution.detectedTargets,
+          installedTargets: installResolution.targets,
+          nextCommand: `skilo share ${source}${selection.selectionMode === 'all' ? ' -y' : ''}`,
+          selectedSkills: selection.selectedSkills.map((skill) => ({
+            name: skill.name,
+            path: skill.path,
+            tool: skill.tool,
+          })),
+          installedSkills: installResults.map((installResult) => ({
+            name: installResult.name,
+            targets: installResult.targets,
+            installedDirs: installResult.installedDirs,
+          })),
+        });
+      }
+      return;
+    }
 
     if (await isRegistrySkillRef(source) && !(prefersRepoSelection && isGitHubRepoLike(source))) {
       const { installCommand } = await import('./install.js');
@@ -257,7 +384,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.13',
+      'User-Agent': 'skilo-cli/1.0.14',
     },
   });
 
@@ -466,7 +593,7 @@ async function importFromLocalPath(source: string, allowRepoRoot = false): Promi
   return resolvedPath;
 }
 
-async function installSkill(
+export async function installSkill(
   skillPath: string,
   options: InstallOptions = {},
   installResolution: InstallTargetResolution
