@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { CopyIcon } from "../components/icons";
 import { api } from "../api/skilo";
@@ -15,12 +15,19 @@ function PackPage() {
   const [copied, setCopied] = useState(false);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
 
+  // The active pack token — starts as the URL token, updates when subset is created
+  const [activeToken, setActiveToken] = useState(token || "");
+  const [subsetLoading, setSubsetLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const abortRef = useRef<AbortController>();
+
   useEffect(() => {
     if (!token) return;
     api
       .resolvePack(token)
       .then((data) => {
         setPack(data);
+        setActiveToken(data.token);
         const all: Record<number, boolean> = {};
         data.skills.forEach((_, i) => { all[i] = true; });
         setSelected(all);
@@ -32,18 +39,66 @@ function PackPage() {
   const selectedCount = Object.values(selected).filter(Boolean).length;
   const allSelected = pack ? selectedCount === pack.skills.length : false;
 
-  const installText = useMemo(() => {
-    if (!pack) return "";
-    if (allSelected) return `npx skilo-cli add skilo.xyz/p/${pack.token}`;
-    const cmds = pack.skills
-      .filter((_, i) => selected[i])
-      .map((s) => `npx skilo-cli add skilo.xyz/s/${s.shareToken}`);
-    return cmds.join("\n");
-  }, [pack, selected, allSelected]);
+  // Resolve subset pack when selection changes
+  const resolveSubset = useCallback((sel: Record<number, boolean>, packData: PackData) => {
+    const count = Object.values(sel).filter(Boolean).length;
+    const isAll = count === packData.skills.length;
+
+    // All selected → revert to original token instantly
+    if (isAll) {
+      setActiveToken(packData.token);
+      setSubsetLoading(false);
+      window.history.replaceState(null, "", `/p/${packData.token}`);
+      return;
+    }
+
+    // None selected → no valid pack
+    if (count === 0) {
+      setSubsetLoading(false);
+      return;
+    }
+
+    // Subset → call the API
+    const keepTokens = packData.skills
+      .filter((_, i) => sel[i])
+      .map((s) => s.shareToken);
+
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setSubsetLoading(true);
+    api
+      .subsetPack(packData.token, keepTokens)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        setActiveToken(result.token);
+        window.history.replaceState(null, "", `/p/${result.token}`);
+      })
+      .catch((e) => {
+        if (controller.signal.aborted) return;
+        console.error("Subset failed:", e);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setSubsetLoading(false);
+      });
+  }, []);
+
+  // Debounce subset resolution on selection changes
+  useEffect(() => {
+    if (!pack) return;
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => resolveSubset(selected, pack), 300);
+    return () => clearTimeout(debounceRef.current);
+  }, [selected, pack, resolveSubset]);
+
+  const installCmd = `npx skilo-cli add skilo.xyz/p/${activeToken}`;
+  const inspectCmd = `npx skilo-cli inspect skilo.xyz/p/${activeToken}`;
 
   const handleCopy = async () => {
-    if (!installText) return;
-    await navigator.clipboard.writeText(installText);
+    if (selectedCount === 0) return;
+    await navigator.clipboard.writeText(installCmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -106,7 +161,7 @@ function PackPage() {
         </div>
       </div>
 
-      {/* ── Install (terminal — always stable) ── */}
+      {/* ── Install (terminal) ── */}
       <div className="mt-4 overflow-hidden rounded-xl border border-stone-800/80 shadow-lg shadow-stone-900/5">
         <div className="flex items-center justify-between border-b border-stone-800/60 bg-stone-900 px-4 py-2.5">
           <div className="flex items-center gap-1.5">
@@ -133,13 +188,15 @@ function PackPage() {
         <div className="bg-stone-950 px-5 py-4 font-mono text-[13px] leading-6">
           <div>
             <span className="text-stone-600">$ </span>
-            <span className="text-stone-200">
-              npx skilo-cli add skilo.xyz/p/{pack.token}
+            <span className={`text-stone-200 transition-opacity duration-150 ${subsetLoading ? "opacity-50" : ""}`}>
+              {selectedCount === 0
+                ? "npx skilo-cli add skilo.xyz/p/..."
+                : installCmd}
             </span>
           </div>
           <div className="pl-4 text-stone-500">
-            &#10003; {pack.skills.length} skill
-            {pack.skills.length !== 1 ? "s" : ""} installed
+            &#10003; {selectedCount === 0 ? "0" : selectedCount} skill
+            {selectedCount !== 1 ? "s" : ""} installed
           </div>
         </div>
       </div>
@@ -147,7 +204,9 @@ function PackPage() {
         Auto-detects installed tools.{" "}
         Run{" "}
         <code className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[11px]">
-          npx skilo-cli inspect skilo.xyz/p/{pack.token}
+          {selectedCount === 0
+            ? "npx skilo-cli inspect skilo.xyz/p/..."
+            : inspectCmd}
         </code>{" "}
         to review before installing.
       </p>
