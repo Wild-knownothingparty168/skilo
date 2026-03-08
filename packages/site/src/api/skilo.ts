@@ -169,7 +169,7 @@ export const api = {
     return res.json();
   },
 
-  async createRefPack(refs: string[]): Promise<{ token: string; url: string; count: number }> {
+  async createRefPack(refs: string[]): Promise<{ token: string; url: string; count: number; items?: Array<{ ref: string; token: string; url: string }> }> {
     const res = await fetch(`${API_BASE}/v1/packs/from-refs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

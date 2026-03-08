@@ -2,6 +2,12 @@
 
 > All notable changes to Skilo, generated from the commit history.
 
+## 2026-03-09
+
+### Changed
+
+- Build unified catalog, profiles, and pack tray (`e778ee1`)
+
 ## 2026-03-08
 
 ### Changed
