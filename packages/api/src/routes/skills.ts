@@ -295,6 +295,11 @@ skillsRouter.get('/share/:token', rateLimiters.resolveShare, async (c) => {
     const share = await shareStmt.bind(token).first<ShareRow>();
 
     if (!share) {
+      // Fallback: check KV for ref-links (skilo.xyz/s/ for arbitrary refs)
+      const refLink = await c.env.SKILLPACK_KV.get(`ref-link:${token}`, { type: 'json' }) as { ref: string; createdAt: number } | null;
+      if (refLink) {
+        return c.json({ type: 'ref-link', ref: refLink.ref, token });
+      }
       return c.json({ error: 'not_found', message: 'Share link not found' }, 404);
     }
 
