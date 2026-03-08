@@ -9,6 +9,8 @@ export interface InstallOptions {
   skill?: string[];
   list?: boolean;
   all?: boolean;
+  skip?: string;
+  only?: string;
   cc?: boolean;
   claudeCode?: boolean;
   codex?: boolean;

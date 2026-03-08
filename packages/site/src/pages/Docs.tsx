@@ -63,7 +63,7 @@ function Docs() {
         {/* ── Quick start ── */}
         <section className="flex flex-col gap-2">
           <p className="font-medium">Quick start</p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Start with npx. Every <Code>npx skilo-cli ...</Code> run refreshes the global <Code>skilo</Code> binary in the background, and the installed command keeps itself updated too.
           </p>
           <Terminal lines={[
@@ -74,13 +74,13 @@ function Docs() {
             { cmd: "skilo pack ./code-reviewer flrabbit/original-landing-page-builder --name \"Starter pack\"" },
             { out: "\u2192 skilo.xyz/p/abc123" },
           ]} />
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             No account required. Skills are published anonymously by default. You can claim them later with <Code>skilo claim</Code>.
           </p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Want a real namespace? Run <Code copy>skilo login yaz</Code> once. Use <Code copy>skilo login --token sk_...</Code> to restore an existing account.
           </p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Agents should prefer <Code copy>npx skilo-cli --json</Code> or <Code copy>https://skilo.xyz/llms.txt</Code>.
           </p>
         </section>
@@ -94,17 +94,17 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo share &lt;path&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Create a shareable link for a local skill directory. Publishes the skill and returns a URL.
               </p>
-              <ul className="text-stone-500 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
+              <ul className="text-stone-600 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
                 <li><Code>--one-time</Code> &mdash; link expires after first use</li>
                 <li><Code>--expires 2h</Code> &mdash; auto-expire after a duration (m, h, d)</li>
                 <li><Code>--uses 5</Code> &mdash; limit total downloads</li>
                 <li><Code>--password</Code> &mdash; require a password to access</li>
                 <li><Code>--listed</Code> &mdash; make the underlying skill public before linking.</li>
               </ul>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Local shares default to unlisted even when you are logged in.
               </p>
             </div>
@@ -113,10 +113,10 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo share &lt;tool&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Share all skills from an AI tool at once. Supported tools: <Code>claude</Code>, <Code>codex</Code>, <Code>cursor</Code>, <Code>opencode</Code>, <Code>amp</Code>, <Code>windsurf</Code>, <Code>cline</Code>, <Code>roo</Code>, or <Code>all</Code>.
               </p>
-              <ul className="text-stone-500 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
+              <ul className="text-stone-600 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
                 <li><Code>-y</Code> &mdash; skip interactive selection, share everything</li>
               </ul>
             </div>
@@ -125,14 +125,15 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo add &lt;skill&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Install a skill or pack. Accepts a share URL, pack URL, namespace/name, .skl file, GitHub URL, or local path.
               </p>
-              <ul className="text-stone-500 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
+              <ul className="text-stone-600 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
                 <li>Auto-installs into a detected tool when exactly one is found.</li>
                 <li>Prompts once in interactive runs when multiple tools are detected.</li>
                 <li>Use explicit flags or <Code>SKILO_TARGETS</Code> in non-interactive environments.</li>
                 <li>Tool names also work as local sources: <Code>skilo add claude --oc --all</Code>.</li>
+                <li>Pack links open a checked-by-default picker. Use <Code>--only reviewer,planner</Code> or <Code>--skip debugger</Code> in headless runs.</li>
               </ul>
             </div>
 
@@ -140,7 +141,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo sync &lt;source&gt; &lt;target&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Copy selected skills directly between tools. For example: <Code>skilo sync claude opencode</Code>.
               </p>
             </div>
@@ -149,10 +150,10 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo publish</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Publish the current directory to the registry. Reads SKILL.md for metadata.
               </p>
-              <ul className="text-stone-500 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
+              <ul className="text-stone-600 text-sm list-disc pl-5 mt-1 flex flex-col gap-0.5">
                 <li><Code>--listed</Code> &mdash; publish publicly under your namespace.</li>
                 <li><Code>--unlisted</Code> &mdash; keep the skill off search.</li>
               </ul>
@@ -162,7 +163,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo login &lt;username&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Create a publishing identity and save an API key locally. You can also restore with <Code>skilo login --token sk_...</Code>.
               </p>
             </div>
@@ -171,7 +172,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo list --published</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 List skills under your logged-in namespace, including public vs unlisted visibility.
               </p>
             </div>
@@ -180,7 +181,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo search &lt;query&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Search the registry for skills by name or description.
               </p>
             </div>
@@ -189,7 +190,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo inspect &lt;skill&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 View a skill's SKILL.md, checksum, and metadata without installing.
               </p>
             </div>
@@ -198,7 +199,7 @@ function Docs() {
               <p className="text-sm">
                 <Code>skilo export</Code> / <Code>skilo import &lt;source&gt;</Code>
               </p>
-              <p className="text-stone-500 text-sm mt-1">
+              <p className="text-stone-600 text-sm mt-1">
                 Export to a .skl file for offline sharing, or import from a .skl file, GitHub repo, or local path.
               </p>
             </div>
@@ -208,7 +209,7 @@ function Docs() {
         {/* ── SKILL.md ── */}
         <section className="flex flex-col gap-2 mt-4">
           <p className="font-medium">SKILL.md format</p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Every skill is a directory with a SKILL.md file. The file uses YAML frontmatter for metadata and markdown for the skill content.
           </p>
           <Terminal lines={[
@@ -223,7 +224,7 @@ function Docs() {
             { out: "" },
             { out: "Instructions for the agent..." },
           ]} />
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Fields: <Code>name</Code> and <Code>description</Code> are required. <Code>version</Code>, <Code>author</Code>, <Code>homepage</Code>, <Code>repository</Code>, and <Code>keywords</Code> are optional.
           </p>
         </section>
@@ -231,15 +232,15 @@ function Docs() {
         {/* ── Trust ── */}
         <section className="flex flex-col gap-2 mt-4">
           <p className="font-medium">Trust and verification</p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Every published skill has a SHA-256 checksum. The CLI verifies integrity on install.
           </p>
-          <ul className="flex list-disc flex-col gap-1 pl-5 text-stone-500">
+          <ul className="flex list-disc flex-col gap-1 pl-5 text-stone-600">
             <li><span className="font-medium text-black">Anonymous</span> &mdash; published without an account. Inspect before installing.</li>
             <li><span className="font-medium text-black">Claimed</span> &mdash; a user has claimed ownership with <Code>skilo claim</Code>.</li>
             <li><span className="font-medium text-black">Verified</span> &mdash; publisher identity confirmed. Skill is cryptographically signed.</li>
           </ul>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Use <Code>skilo inspect</Code> to review a skill's content and checksum before you install.
           </p>
         </section>
@@ -247,7 +248,7 @@ function Docs() {
         {/* ── Tool directories ── */}
         <section className="flex flex-col gap-2 mt-4">
           <p className="font-medium">Supported tools</p>
-          <p className="text-stone-500">
+          <p className="text-stone-600">
             Skilo discovers skills from these directories:
           </p>
           <div className="overflow-x-auto">
@@ -258,7 +259,7 @@ function Docs() {
                   <th className="text-left py-2 font-medium text-black">Directory</th>
                 </tr>
               </thead>
-              <tbody className="text-stone-500">
+              <tbody className="text-stone-600">
                 <tr className="border-b border-stone-100"><td className="py-1.5 pr-4">Claude Code</td><td className="py-1.5 font-mono text-[13px]">~/.claude/skills/</td></tr>
                 <tr className="border-b border-stone-100"><td className="py-1.5 pr-4">Codex</td><td className="py-1.5 font-mono text-[13px]">~/.agents/skills/, ~/.codex/skills/</td></tr>
                 <tr className="border-b border-stone-100"><td className="py-1.5 pr-4">Cursor</td><td className="py-1.5 font-mono text-[13px]">~/.cursor/skills/</td></tr>

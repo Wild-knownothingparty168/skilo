@@ -45,7 +45,7 @@ export class ApiClient {
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'User-Agent': 'skilo-cli/1.0.16',
+      'User-Agent': 'skilo-cli/1.0.17',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -136,7 +136,7 @@ export class ApiClient {
     const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
-        'User-Agent': 'skilo-cli/1.0.16',
+        'User-Agent': 'skilo-cli/1.0.17',
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       },
       body: formData,
@@ -288,6 +288,25 @@ export class ApiClient {
 
     if (!res.ok) {
       throw new Error(`Create pack failed: ${res.status} ${res.statusText}`);
+    }
+
+    return res.json();
+  }
+
+  async createPackSubset(
+    source: string,
+    keep: string[]
+  ): Promise<{ token: string; url: string; count: number }> {
+    const url = `${this.baseUrl}/v1/packs/subset`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ source, keep }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `Create pack subset failed: ${res.status} ${res.statusText}`);
     }
 
     return res.json();

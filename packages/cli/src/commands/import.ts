@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { mkdtemp } from 'node:fs/promises';
 import * as tar from 'tar';
 import { getClient } from '../api/client.js';
+import type { PackData, PackSkill } from '../types.js';
 import { isRegistrySkillRef, normalizeSourceInput } from '../utils/source-kind.js';
 import { findSkillFile } from '../utils/skill-file.js';
 import {
@@ -26,6 +27,7 @@ import {
 } from '../utils/repo-skills.js';
 import { quoteShellValue, selectToolSourceSkills } from '../utils/tool-source.js';
 import { discoverSkills, getToolLabel, resolveToolName } from '../tool-dirs.js';
+import { pickItems } from '../utils/picker.js';
 import { parsePackToken } from './share.js';
 
 function classifyImportSource(source: string): 'tool' | 'registry' | 'pack' | 'github' | 'bundle' | 'share' | 'url' | 'local' {
@@ -73,11 +75,16 @@ function emitTargetSelectionNoop(
   source: string,
   resolvedType: string,
   skillCount: number,
-  resolution: InstallTargetResolution
+  resolution: InstallTargetResolution,
+  options: Pick<InstallOptions, 'only' | 'skip'> = {}
 ): void {
+  const selectionFlags = [
+    options.only ? `--only ${quoteShellValue(options.only)}` : '',
+    options.skip ? `--skip ${quoteShellValue(options.skip)}` : '',
+  ].filter(Boolean).join(' ');
   const nextCommand = resolution.detectedTargets[0]
-    ? `skilo add ${source} ${getTargetFlag(resolution.detectedTargets[0])}`
-    : `skilo add ${source} --cc`;
+    ? `skilo add ${source}${selectionFlags ? ` ${selectionFlags}` : ''} ${getTargetFlag(resolution.detectedTargets[0])}`
+    : `skilo add ${source}${selectionFlags ? ` ${selectionFlags}` : ''} --cc`;
 
   if (isJsonOutput()) {
     printJson({
@@ -100,6 +107,143 @@ function emitTargetSelectionNoop(
       ? `Multiple install targets detected: ${resolution.detectedTargets.join(', ')}. Pass ${resolution.detectedTargets.map(getTargetFlag).join(', ')} or set SKILO_TARGETS.`
       : 'Install cancelled.'
   );
+}
+
+function parsePackSelectionValues(raw?: string): string[] {
+  return (raw || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function normalizePackSelectionToken(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function getPackSkillLookupTokens(
+  skill: { namespace: string; name: string; shareToken: string },
+  allowBareName: boolean
+): string[] {
+  const tokens = [
+    `${skill.namespace}/${skill.name}`,
+    skill.shareToken,
+    `https://skilo.xyz/s/${skill.shareToken}`,
+    `skilo.xyz/s/${skill.shareToken}`,
+  ];
+
+  if (allowBareName) {
+    tokens.push(skill.name);
+  }
+
+  return tokens.map(normalizePackSelectionToken);
+}
+
+async function selectPackSkills(
+  source: string,
+  pack: PackData,
+  options: InstallOptions = {}
+): Promise<{
+  mode: 'selected' | 'cancelled';
+  selectionMode: 'all' | 'only' | 'skip' | 'interactive';
+  selectedSkills: PackSkill[];
+  customized: boolean;
+}> {
+  if (options.only && options.skip) {
+    throw new Error('Use either --only or --skip for packs, not both');
+  }
+
+  const nameCounts = new Map<string, number>();
+  for (const skill of pack.skills) {
+    const key = normalizePackSelectionToken(skill.name);
+    nameCounts.set(key, (nameCounts.get(key) || 0) + 1);
+  }
+
+  const matchQueries = (queries: string[]) => {
+    const selected = new Set<string>();
+    const missing: string[] = [];
+
+    for (const query of queries.map(normalizePackSelectionToken)) {
+      const match = pack.skills.find((skill) =>
+        getPackSkillLookupTokens(skill, (nameCounts.get(normalizePackSelectionToken(skill.name)) || 0) === 1).includes(query)
+      );
+      if (!match) {
+        missing.push(query);
+        continue;
+      }
+      selected.add(match.shareToken);
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `Pack skill${missing.length === 1 ? '' : 's'} not found: ${missing.join(', ')}. Available: ${pack.skills.map((skill) => `${skill.namespace}/${skill.name}`).join(', ')}`
+      );
+    }
+
+    return selected;
+  };
+
+  if (options.only) {
+    const selectedTokens = matchQueries(parsePackSelectionValues(options.only));
+    const selectedSkills = pack.skills.filter((skill) => selectedTokens.has(skill.shareToken));
+    if (selectedSkills.length === 0) {
+      throw new Error('No pack skills selected');
+    }
+    return {
+      mode: 'selected',
+      selectionMode: 'only',
+      selectedSkills,
+      customized: selectedSkills.length !== pack.skills.length,
+    };
+  }
+
+  if (options.skip) {
+    const skippedTokens = matchQueries(parsePackSelectionValues(options.skip));
+    const selectedSkills = pack.skills.filter((skill) => !skippedTokens.has(skill.shareToken));
+    if (selectedSkills.length === 0) {
+      throw new Error('No pack skills remain after --skip');
+    }
+    return {
+      mode: 'selected',
+      selectionMode: 'skip',
+      selectedSkills,
+      customized: selectedSkills.length !== pack.skills.length,
+    };
+  }
+
+  if (process.stdin.isTTY && !isJsonOutput()) {
+    const picked = await pickItems(
+      pack.skills.map((skill) => ({
+        value: skill,
+        name: `${skill.namespace}/${skill.name}`,
+        description: skill.description,
+        meta: skill.version ? `v${skill.version}` : undefined,
+      })),
+      'Select pack skills'
+    );
+
+    if (picked.cancelled || picked.selected.length === 0) {
+      return {
+        mode: 'cancelled',
+        selectionMode: 'interactive',
+        selectedSkills: [],
+        customized: false,
+      };
+    }
+
+    return {
+      mode: 'selected',
+      selectionMode: 'interactive',
+      selectedSkills: picked.selected,
+      customized: picked.selected.length !== pack.skills.length,
+    };
+  }
+
+  return {
+    mode: 'selected',
+    selectionMode: 'all',
+    selectedSkills: pack.skills,
+    customized: false,
+  };
 }
 
 export async function importCommand(source: string, options: InstallOptions = {}): Promise<void> {
@@ -225,19 +369,35 @@ export async function importCommand(source: string, options: InstallOptions = {}
       return;
     }
 
-    let skillPath: string;
     const packToken = parsePackToken(source);
 
     if (packToken) {
-      const installResolution = await resolveInstallTargets(options);
-      if (installResolution.mode === 'needs_target' || (installResolution.mode === 'selected' && installResolution.targets.length === 0)) {
-        const client = await getClient();
-        const pack = await client.resolvePack(packToken);
-        emitTargetSelectionNoop(source, 'pack', pack.skills.length, installResolution);
+      const client = await getClient();
+      const pack = await client.resolvePack(packToken);
+      const packSelection = await selectPackSkills(source, pack, options);
+
+      if (packSelection.mode === 'cancelled') {
+        logInfo('No pack skills selected.');
+        if (isJsonOutput()) {
+          printJson({
+            command: 'add',
+            source,
+            resolvedType: 'pack',
+            skillCount: 0,
+            installedTargets: [],
+            cancelled: true,
+          });
+        }
         return;
       }
 
-      const packResult = await importFromPackLink(packToken, options, installResolution);
+      const installResolution = await resolveInstallTargets(options);
+      if (installResolution.mode === 'needs_target' || (installResolution.mode === 'selected' && installResolution.targets.length === 0)) {
+        emitTargetSelectionNoop(source, 'pack', packSelection.selectedSkills.length, installResolution, options);
+        return;
+      }
+
+      const packResult = await importFromPackLink(pack, packSelection.selectedSkills, options, installResolution);
       logSuccess(`Imported pack ${packResult.name}`);
 
       if (isJsonOutput()) {
@@ -252,12 +412,18 @@ export async function importCommand(source: string, options: InstallOptions = {}
           pack: {
             token: packResult.token,
             name: packResult.name,
+            sourceToken: pack.token,
+            customized: packResult.customized,
+            originalSkillCount: pack.skills.length,
+            selectedSkillCount: packResult.installedSkills.length,
           },
           installedSkills: packResult.installedSkills,
         });
       }
       return;
     }
+
+    let skillPath: string;
 
     if (isGitHubRepoLike(source)) {
       const imported = await importFromGitHub(normalizeGitHubSource(source));
@@ -384,7 +550,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.16',
+      'User-Agent': 'skilo-cli/1.0.17',
     },
   });
 
@@ -497,12 +663,14 @@ async function importFromShareLink(source: string): Promise<{ skillPath: string;
 }
 
 async function importFromPackLink(
-  token: string,
+  pack: PackData,
+  selectedSkills: PackSkill[],
   options: InstallOptions = {},
   installResolution: InstallTargetResolution
 ): Promise<{
   token: string;
   name: string;
+  customized: boolean;
   installedSkills: Array<{
     source: string;
     name: string;
@@ -511,7 +679,8 @@ async function importFromPackLink(
   }>;
 }> {
   const client = await getClient();
-  const pack = await client.resolvePack(token);
+  const customized = selectedSkills.length !== pack.skills.length;
+  let effectiveToken = pack.token;
   const installedSkills: Array<{
     source: string;
     name: string;
@@ -519,9 +688,18 @@ async function importFromPackLink(
     installedDirs: string[];
   }> = [];
 
-  logInfo(`Resolving pack ${pack.name || token}`);
+  logInfo(`Resolving pack ${pack.name || pack.token}`);
 
-  for (const skill of pack.skills) {
+  if (customized) {
+    const subset = await client.createPackSubset(
+      pack.token,
+      selectedSkills.map((skill) => skill.shareToken)
+    );
+    effectiveToken = subset.token;
+    printNote('custom pack', subset.url, 'primary');
+  }
+
+  for (const skill of selectedSkills) {
     const shareSource = `https://skilo.xyz/s/${skill.shareToken}`;
     const imported = await importFromShareLink(shareSource);
     try {
@@ -538,8 +716,9 @@ async function importFromPackLink(
   }
 
   return {
-    token: pack.token,
+    token: effectiveToken,
     name: pack.name,
+    customized,
     installedSkills,
   };
 }

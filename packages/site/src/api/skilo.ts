@@ -79,6 +79,16 @@ export const api = {
     return res.json();
   },
 
+  async subsetPack(source: string, keep: string[]): Promise<{ token: string; url: string; count: number }> {
+    const res = await fetch(`${API_BASE}/v1/packs/subset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source, keep }),
+    });
+    if (!res.ok) throw new Error('Failed to create pack subset');
+    return res.json();
+  },
+
   async fetchSkillContent(tarballUrl: string): Promise<string> {
     const url = tarballUrl.startsWith('http') ? tarballUrl : `${API_BASE}${tarballUrl}`;
     const res = await fetch(url);

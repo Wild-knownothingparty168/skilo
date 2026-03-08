@@ -33,6 +33,8 @@ function addInstallTargetOptions(command: Command): Command {
     .option('-s, --skill <name...>', 'Select specific skill directories from a repo source')
     .option('--list', 'List available skills in a repo source without installing')
     .option('--all', 'Install every discovered skill from a repo source')
+    .option('--skip <names>', 'Skip pack skills by name or namespace/name (comma-separated)')
+    .option('--only <names>', 'Install only these pack skills by name or namespace/name (comma-separated)')
     .option('--cc', 'Install into Claude Code')
     .option('--claude-code', 'Install into Claude Code')
     .option('--codex', 'Install into Codex')
@@ -49,7 +51,7 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Share agent skills with a link. No repo required.')
-  .version('1.0.16');
+  .version('1.0.17');
 program.option('--json', 'Emit machine-readable JSON');
 
 program.showSuggestionAfterError(true);

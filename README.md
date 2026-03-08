@@ -154,7 +154,13 @@ skilo pack ./skills/reviewer flrabbit/original-landing-page-builder skilo.xyz/s/
 
 # Install the whole pack with one command
 skilo add https://skilo.xyz/p/abc123
+
+# Install only part of a pack
+skilo add https://skilo.xyz/p/abc123 --only reviewer,planner
+skilo add https://skilo.xyz/p/abc123 --skip debugger
 ```
+
+Interactive `skilo add` on a pack shows a checked-by-default picker. If you deselect skills, Skilo creates a derived pack link and installs from that subset so packs stay shareable all the way through.
 
 ### Inspect before installing
 

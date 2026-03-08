@@ -47,6 +47,7 @@ Install a skill or pack. Accepts a share URL, pack URL, namespace/name, .skl fil
 - If multiple tools are detected, interactive runs prompt once.
 - Non-interactive runs should pass explicit flags or set `SKILO_TARGETS`.
 - If nothing is detected, Skilo falls back to Claude Code.
+- Pack links open an all-selected picker in TTY mode. Use `--only reviewer,planner` or `--skip debugger` in non-interactive runs.
 
 Tool names also work as local sources. Examples:
 
