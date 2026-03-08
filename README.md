@@ -1,16 +1,25 @@
 # Skilo
 
-Skilo is a tiny sharing layer for agent skills. Turn a `SKILL.md` folder into a link, then install it into Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, OpenClaw, and other agents with one command.
+Share agent skills with a link. Publish and install `SKILL.md` artifacts across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
 
+[![Website](https://img.shields.io/badge/website-skilo.xyz-black)](https://skilo.xyz)
 [![npm version](https://badge.fury.io/js/skilo-cli.svg)](https://www.npmjs.com/package/skilo-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-1f6feb.svg)](./CONTRIBUTING.md)
+
+Keywords: `agent skills`, `SKILL.md`, `AI coding tools`, `Claude Code`, `Codex`, `Cursor`, `OpenCode`, `skill sharing`, `developer tools`
+
+- Website: https://skilo.xyz
+- Docs: https://skilo.xyz/docs
+- CLI: https://www.npmjs.com/package/skilo-cli
+- Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ```
 $ npx skilo-cli share ./my-skill
-🔗 https://skilo.xyz/s/a3xK9mP2
+https://skilo.xyz/s/a3xK9mP2
 
-$ npx skilo-cli add https://skilo.xyz/s/a3xK9mP2
-✓ Installed @anonymous/my-skill
+$ npx skilo-cli add skilo.xyz/s/a3xK9mP2
+Installed anonymous/my-skill
 ```
 
 ## Why Skilo?
@@ -194,8 +203,8 @@ pnpm --filter @skilo/site deploy
 
 ## Contributing
 
-Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md).
+Contributions are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and keep PRs focused, tested, and documented.
 
 ## License
 
-MIT © [yazcaleb](https://github.com/yazcaleb)
+MIT © Plaw, Inc.

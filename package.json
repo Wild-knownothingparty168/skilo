@@ -1,8 +1,33 @@
 {
   "name": "skilo",
   "version": "1.0.0",
+  "description": "Skilo is a sharing layer for agent skills and SKILL.md artifacts.",
   "private": true,
+  "license": "MIT",
+  "author": "Plaw, Inc.",
+  "homepage": "https://skilo.xyz",
+  "bugs": {
+    "url": "https://github.com/yazcaleb/skilo/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yazcaleb/skilo.git"
+  },
   "packageManager": "pnpm@10.29.3",
+  "keywords": [
+    "ai",
+    "agents",
+    "agent-skills",
+    "skills",
+    "skill-sharing",
+    "cli",
+    "claude-code",
+    "codex",
+    "cursor",
+    "opencode",
+    "developer-tools",
+    "markdown"
+  ],
   "workspaces": [
     "packages/*"
   ],
