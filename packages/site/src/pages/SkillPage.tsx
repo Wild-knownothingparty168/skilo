@@ -178,7 +178,7 @@ function SkillPage() {
             skillId={skill.namespace + '/' + skill.name}
             namespace={skill.namespace}
             name={skill.name}
-            command={`npx skilo-cli import https://skilo.xyz/s/${token}`}
+            command={`npx skilo-cli add https://skilo.xyz/s/${token}`}
           />
         </div>
 

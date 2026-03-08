@@ -6,6 +6,7 @@ import { join, resolve, basename } from 'node:path';
 import { createGunzip } from 'node:zlib';
 import * as tar from 'tar';
 import { getClient } from '../api/client.js';
+import { isRegistrySkillRef } from '../utils/source-kind.js';
 
 interface ImportOptions {
   global?: boolean;
@@ -25,6 +26,12 @@ export async function importCommand(source: string, options: ImportOptions = {})
   }
 
   try {
+    if (await isRegistrySkillRef(source)) {
+      const { installCommand } = await import('./install.js');
+      await installCommand(source, options);
+      return;
+    }
+
     let skillPath: string;
 
     if (source.startsWith('github:')) {
@@ -68,7 +75,7 @@ async function importFromGitHub(source: string): Promise<string> {
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.3',
+      'User-Agent': 'skilo-cli/1.0.4',
     },
   });
 

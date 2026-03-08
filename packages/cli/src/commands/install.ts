@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { createGunzip } from 'node:zlib';
 import { mkdir, unlink, readFile } from 'node:fs/promises';
 import * as crypto from 'node:crypto';
+import { isRegistrySkillRef } from '../utils/source-kind.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string; version?: string } {
   const parts = skill.split('@');
@@ -22,11 +23,17 @@ function getSkillsDir(): string {
 
 export async function installCommand(skill: string, _options?: { global?: boolean }): Promise<void> {
   if (!skill) {
-    console.error('Usage: skilo install <namespace/name[@version]>');
+    console.error('Usage: skilo install <skill|source>');
     process.exit(1);
   }
 
   try {
+    if (!await isRegistrySkillRef(skill)) {
+      const { importCommand } = await import('./import.js');
+      await importCommand(skill, _options);
+      return;
+    }
+
     const { namespace, name, version } = parseSkillRef(skill);
     const client = await getClient();
 
