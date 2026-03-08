@@ -33,6 +33,13 @@ export interface RepoSkillCandidate {
   source: 'skill-file' | 'plugin-manifest';
 }
 
+export interface SkillsShSource {
+  owner: string;
+  repo: string;
+  skill?: string;
+  githubSource: string;
+}
+
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -219,12 +226,36 @@ export function formatRepoSkillChoices(skills: RepoSkillCandidate[]): string[] {
 export function isGitHubRepoLike(source: string): boolean {
   return (
     source.startsWith('github:') ||
+    /^https?:\/\/skills\.sh\/[^/]+\/[^/]+(?:\/[^/?#]+)?(?:[?#].*)?$/i.test(source) ||
     /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(source) ||
     /^[^/@\s]+\/[^/@\s]+$/.test(source)
   );
 }
 
+export function parseSkillsShSource(source: string): SkillsShSource | null {
+  const match = source.match(/^https?:\/\/skills\.sh\/([^/]+)\/([^/]+)(?:\/([^/?#]+))?(?:[?#].*)?$/i);
+  if (!match) {
+    return null;
+  }
+
+  const owner = match[1];
+  const repo = match[2];
+  const skill = match[3];
+
+  return {
+    owner,
+    repo,
+    skill,
+    githubSource: `github:${owner}/${repo}`,
+  };
+}
+
 export function normalizeGitHubSource(source: string): string {
+  const skillsShSource = parseSkillsShSource(source);
+  if (skillsShSource) {
+    return skillsShSource.githubSource;
+  }
+
   if (source.startsWith('github:')) {
     return source;
   }

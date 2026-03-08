@@ -12,6 +12,10 @@ export function normalizeSourceInput(source: string): string {
     return `https://${trimmed}`;
   }
 
+  if (/^skills\.sh\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
   return trimmed;
 }
 
