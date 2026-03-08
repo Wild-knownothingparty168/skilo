@@ -1,13 +1,43 @@
 # Skilo
 
-> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Cursor, Codex, and every AI coding tool.
+> Share agent skills with a link. Publish and install SKILL.md files across Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, and OpenClaw.
 
 Skilo is a CLI and registry for sharing agent skills. Skills are directories containing a SKILL.md file with YAML frontmatter and markdown instructions. The CLI publishes skills to the registry and generates shareable links. Recipients install with one command. No account required.
+
+## Start Here
+
+If you are an agent and need to decide what to do:
+
+1. Run `npx skilo-cli --json` for the shortest machine-readable starter.
+2. Use `skilo add <source>` to install, `skilo inspect <source>` to review, and `skilo share <path>` to publish.
+3. Prefer `--json` on CLI commands when you need structured output.
 
 - Install: `npm i -g skilo-cli`
 - Share a skill: `skilo share ./my-skill` → returns a link
 - Install a skill: `skilo add skilo.xyz/s/<token>` → downloads, verifies, installs
 - Bulk share: `skilo share claude` → shares all skills from a tool at once
+
+## Common Inputs
+
+- Registry ref: `namespace/skill-name`
+- Share link: `https://skilo.xyz/s/<token>` or `skilo.xyz/s/<token>`
+- Pack link: `https://skilo.xyz/p/<token>`
+- GitHub source: `github:user/repo` or `https://github.com/user/repo`
+- Local path: `./my-skill` or `/abs/path/to/skill`
+
+## Native Install Targets
+
+- Claude Code: `--cc` or `--claude-code`
+- Codex: `--codex`
+- Cursor: `--cursor`
+- Amp: `--amp`
+- Windsurf: `--windsurf`
+- OpenCode: `--oc` or `--opencode`
+- Cline: `--cline`
+- Roo: `--roo`
+- OpenClaw: `--openclaw`
+
+If no explicit target flag is passed, Skilo defaults to Claude Code unless `SKILO_TARGETS` is set.
 
 ## Docs
 
@@ -19,6 +49,7 @@ Skilo is a CLI and registry for sharing agent skills. Skills are directories con
 
 - [GitHub](https://github.com/yazcaleb/skilo): Source code and issues
 - [npm](https://www.npmjs.com/package/skilo-cli): CLI package
+- [API root](https://skilo-api.yaz-b35.workers.dev/): machine-readable capabilities
 
 ## Optional
 

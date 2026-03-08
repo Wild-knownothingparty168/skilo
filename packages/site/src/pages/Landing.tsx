@@ -111,14 +111,6 @@ function Landing() {
               Read the docs&nbsp;&rarr;
             </Link>
           </p>
-
-          <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
-            <p className="font-medium text-stone-900">Start in one step</p>
-            <p className="mt-1">
-              Humans can run <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[13px]">npx skilo-cli</code>.
-              Agents can read <a href="/llms.txt" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">/llms.txt</a>.
-            </p>
-          </div>
         </div>
 
         {/* ── Terminal ── */}
