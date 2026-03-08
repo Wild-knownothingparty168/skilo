@@ -71,6 +71,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <Link to="/docs" className={FOOTER_LINK}>Docs</Link>
           <Link to="/claim" className={FOOTER_LINK}>Claim</Link>
+          <Link to="/changelog" className={FOOTER_LINK}>Changelog</Link>
           <a
             href="https://github.com/yazcaleb/skilo"
             className={FOOTER_LINK}

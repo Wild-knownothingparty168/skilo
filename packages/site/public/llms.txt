@@ -45,6 +45,7 @@ If no explicit target flag is passed, Skilo defaults to Claude Code unless `SKIL
 - [Documentation](https://skilo.xyz/docs.md): CLI commands, SKILL.md format, supported tools, trust model
 - [Claim a skill](https://skilo.xyz/claim.md): How to claim anonymously published skills
 - [Full context](https://skilo.xyz/llms-full.txt): All documentation in a single file
+- [Changelog](https://skilo.xyz/changelog): What's new, auto-generated from commit history
 
 ## Links
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/generate-changelog.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "deploy": "wrangler pages deploy dist"

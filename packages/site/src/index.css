@@ -78,3 +78,64 @@ body {
   border-top: 1px solid #e7e5e4;
   margin: 1em 0;
 }
+
+/* Rendered changelog */
+.changelog-md h1 {
+  font-size: 1.25em;
+  font-weight: 600;
+  color: #0a0a0a;
+  margin-bottom: 0.25em;
+}
+.changelog-md blockquote {
+  border-left: 3px solid #d6d3d1;
+  padding-left: 1em;
+  color: #78716c;
+  margin-bottom: 1.5em;
+  font-size: 0.875em;
+}
+.changelog-md h2 {
+  font-size: 1em;
+  font-weight: 600;
+  color: #0a0a0a;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid #e7e5e4;
+}
+.changelog-md h2:first-of-type { margin-top: 0; }
+.changelog-md h3 {
+  font-size: 0.8125em;
+  font-weight: 500;
+  color: #78716c;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 1em;
+  margin-bottom: 0.375em;
+}
+.changelog-md ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 0.5em;
+}
+.changelog-md li {
+  position: relative;
+  padding-left: 1em;
+  margin-bottom: 0.25em;
+  font-size: 0.875em;
+  color: #44403c;
+}
+.changelog-md li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d6d3d1;
+}
+.changelog-md code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  color: #a8a29e;
+}

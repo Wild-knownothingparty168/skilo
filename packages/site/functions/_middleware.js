@@ -6,6 +6,8 @@ const STATIC_MARKDOWN = {
   '/docs/': '/docs.md',
   '/claim': '/claim.md',
   '/claim/': '/claim.md',
+  '/changelog': '/changelog.md',
+  '/changelog/': '/changelog.md',
 };
 
 const LLM_BOTS =
