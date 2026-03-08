@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { createGunzip } from 'node:zlib';
 import { mkdir, rm, unlink } from 'node:fs/promises';
 import * as crypto from 'node:crypto';
-import { isRegistrySkillRef } from '../utils/source-kind.js';
-import { type InstallOptions, describeInstallTargets, getInstallDirs } from '../utils/install-targets.js';
-import { exitWithError, logInfo, logSuccess, printNote, printUsage } from '../utils/output.js';
+import { isRegistrySkillRef, normalizeSourceInput } from '../utils/source-kind.js';
+import { type InstallOptions, describeInstallTargets, getInstallDirs, getInstallDestinations } from '../utils/install-targets.js';
+import { exitWithError, isJsonOutput, logInfo, logSuccess, printJson, printNote, printUsage } from '../utils/output.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string; version?: string } {
   const parts = skill.split('@');
@@ -25,6 +25,8 @@ export async function installCommand(skill: string, options: InstallOptions = {}
   }
 
   try {
+    skill = normalizeSourceInput(skill);
+
     if (!await isRegistrySkillRef(skill)) {
       const { importCommand } = await import('./import.js');
       await importCommand(skill, options);
@@ -64,6 +66,8 @@ export async function installCommand(skill: string, options: InstallOptions = {}
     }
 
     const installDirs = getInstallDirs(options);
+    const destinations = getInstallDestinations(options);
+    const installedDirs: string[] = [];
 
     for (const skillsDir of installDirs) {
       await mkdir(skillsDir, { recursive: true });
@@ -82,11 +86,28 @@ export async function installCommand(skill: string, options: InstallOptions = {}
       await pipeline(readStream, createGunzip(), extract({ cwd: skillDir }));
       await unlink(tempPath);
 
+      installedDirs.push(skillDir);
       printNote('installed to', skillDir);
     }
 
     logSuccess(`Installed ${namespace}/${name}@${versionToInstall}`);
     printNote('targets', describeInstallTargets(options));
+
+    if (isJsonOutput()) {
+      printJson({
+        command: 'install',
+        source: skill,
+        skill: `${namespace}/${name}`,
+        version: versionToInstall,
+        checksumVerified: Boolean(expectedChecksum),
+        targets: destinations.map((destination) => ({
+          key: destination.key,
+          label: destination.label,
+          dirs: destination.dirs,
+        })),
+        installedDirs,
+      });
+    }
   } catch (e) {
     exitWithError(`Install failed: ${(e as Error).message}`);
   }

@@ -4,7 +4,7 @@ import { resolveSkillLocation } from '../utils/skill-file.js';
 import { publishLocalSkill } from './publish.js';
 import { isKnownTool, discoverSkills } from '../tool-dirs.js';
 import { pickSkills } from '../utils/picker.js';
-import { blankLine, exitWithError, logError, logInfo, logSuccess, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
+import { blankLine, exitWithError, isJsonOutput, logError, logInfo, logSuccess, printJson, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string } {
   const parts = skill.split('/');
@@ -82,6 +82,21 @@ export async function shareCommand(
     }
 
     logSuccess(`Share link ready for ${target.namespace}/${target.name}`);
+    if (isJsonOutput()) {
+      printJson({
+        command: 'share',
+        skill: `${target.namespace}/${target.name}`,
+        version: target.publishedVersion || null,
+        token: result.token,
+        url: result.url,
+        oneTime: options.oneTime || false,
+        expiresAt: expiresAt || null,
+        maxUses: options.uses || null,
+        passwordProtected: Boolean(options.password),
+      });
+      return;
+    }
+
     printPrimary(result.url);
     if (options.oneTime) printNote('mode', 'one-time');
     if (expiresAt) printNote('expires', new Date(expiresAt).toISOString());
@@ -198,10 +213,33 @@ async function bulkShareCommand(
       const packResult = await client.createPack(toolName, tokens);
       blankLine();
       logSuccess(`Pack ready with ${packResult.count} skills`);
+      if (isJsonOutput()) {
+        printJson({
+          command: 'share',
+          mode: 'bulk',
+          tool: toolName,
+          pack: packResult,
+          successes,
+          failures,
+        });
+        return;
+      }
       printPrimary(packResult.url);
     } catch (e) {
       logError(`Pack creation failed: ${(e as Error).message}`);
     }
+  }
+
+  if (isJsonOutput()) {
+    printJson({
+      command: 'share',
+      mode: 'bulk',
+      tool: toolName,
+      pack: null,
+      successes,
+      failures,
+    });
+    return;
   }
 
   if (successes.length > 0) {

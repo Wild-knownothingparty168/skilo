@@ -46,7 +46,7 @@ function resolveStream(target: 'notice' | 'primary'): NodeJS.WriteStream {
     return process.stdout;
   }
 
-  return isMachineOutput() ? process.stderr : process.stdout;
+  return isMachineOutput() || isJsonOutput() ? process.stderr : process.stdout;
 }
 
 export function isInteractiveOutput(): boolean {
@@ -57,12 +57,20 @@ export function isMachineOutput(): boolean {
   return !process.stdout.isTTY;
 }
 
+export function isJsonOutput(): boolean {
+  return process.argv.includes('--json') || process.env.SKILO_OUTPUT === 'json';
+}
+
 export function blankLine(): void {
+  if (isJsonOutput()) {
+    return;
+  }
+
   write(isMachineOutput() ? process.stderr : process.stdout);
 }
 
 export function logStatus(level: Level, message: string): void {
-  const stream = level === 'error' ? process.stderr : isMachineOutput() ? process.stderr : process.stdout;
+  const stream = level === 'error' || isMachineOutput() || isJsonOutput() ? process.stderr : process.stdout;
   write(stream, `${formatLabel(level)} ${message}`);
 }
 
@@ -84,6 +92,10 @@ export function logError(message: string): void {
 
 export function printPrimary(message: string): void {
   write(process.stdout, message);
+}
+
+export function printJson(value: unknown): void {
+  write(process.stdout, JSON.stringify(value, null, 2));
 }
 
 export function printNote(label: string, value: string, target: 'notice' | 'primary' = 'notice'): void {
@@ -108,6 +120,11 @@ export function printKeyValue(label: string, value: string, width = 12, target: 
 }
 
 export function printUsage(lines: string[]): never {
+  if (isJsonOutput()) {
+    write(process.stderr, JSON.stringify({ error: 'usage_error', lines }, null, 2));
+    process.exit(1);
+  }
+
   for (const line of lines) {
     write(process.stderr, line);
   }
@@ -115,6 +132,11 @@ export function printUsage(lines: string[]): never {
 }
 
 export function exitWithError(message: string): never {
+  if (isJsonOutput()) {
+    write(process.stderr, JSON.stringify({ error: 'command_failed', message }, null, 2));
+    process.exit(1);
+  }
+
   logError(message);
   process.exit(1);
 }

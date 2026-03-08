@@ -1,7 +1,23 @@
 import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+export function normalizeSourceInput(source: string): string {
+  const trimmed = source.trim();
+
+  if (/^(skilo\.xyz|www\.skilo\.xyz)\/(s|p)\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  if (/^github\.com\//i.test(trimmed)) {
+    return `https://${trimmed}`;
+  }
+
+  return trimmed;
+}
+
 export async function isRegistrySkillRef(source: string): Promise<boolean> {
+  source = normalizeSourceInput(source);
+
   if (
     source.startsWith('github:') ||
     source.startsWith('http://') ||

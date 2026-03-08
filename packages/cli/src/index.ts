@@ -23,7 +23,7 @@ import { claimCommand } from './commands/claim.js';
 import { exportCommand } from './commands/export.js';
 import { importCommand } from './commands/import.js';
 import { inspectCommand } from './commands/inspect.js';
-import { blankLine, isInteractiveOutput, printPrimary, printSection } from './utils/output.js';
+import { blankLine, isInteractiveOutput, isJsonOutput, printJson, printPrimary, printSection } from './utils/output.js';
 
 const program = new Command();
 function addInstallTargetOptions(command: Command): Command {
@@ -45,7 +45,8 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Tiny sharing layer for agent skills')
-  .version('1.0.8');
+  .version('1.0.9');
+program.option('--json', 'Emit machine-readable JSON');
 
 program.showSuggestionAfterError(true);
 program.showHelpAfterError('\nRun "skilo --help" for usage.');
@@ -178,22 +179,40 @@ function printInteractiveWelcome(): void {
 }
 
 function printMachineWelcome(): void {
-  printPrimary('skilo-cli');
-  printPrimary('purpose\tshare, install, inspect, and publish agent skills');
-  printPrimary('share_local\tskilo share ./my-skill');
-  printPrimary('install_link\tskilo add https://skilo.xyz/s/abc123 --cc');
-  printPrimary('install_ref\tskilo add namespace/skill-name --codex');
-  printPrimary('inspect\tskilo inspect namespace/skill-name');
-  printPrimary('docs\thttps://skilo.xyz/docs');
-  printPrimary('llms\thttps://skilo.xyz/llms.txt');
-  printPrimary('help\tskilo --help');
+  printJson({
+    name: 'skilo-cli',
+    purpose: 'Share, install, inspect, and publish agent skills.',
+    docs: 'https://skilo.xyz/docs',
+    llms: 'https://skilo.xyz/llms.txt',
+    help: 'skilo --help',
+    examples: {
+      shareLocal: 'skilo share ./my-skill',
+      installLink: 'skilo add https://skilo.xyz/s/abc123 --cc',
+      installRef: 'skilo add namespace/skill-name --codex',
+      inspect: 'skilo inspect namespace/skill-name',
+    },
+    supportedTargets: [
+      'claude-code',
+      'codex',
+      'cursor',
+      'amp',
+      'windsurf',
+      'opencode',
+      'cline',
+      'roo',
+      'openclaw',
+    ],
+  });
 }
 
-if (process.argv.length <= 2) {
-  if (isInteractiveOutput()) {
-    printInteractiveWelcome();
-  } else {
+const cliArgs = process.argv.slice(2);
+const hasOnlyJsonFlag = cliArgs.length > 0 && cliArgs.every((arg) => arg === '--json');
+
+if (process.argv.length <= 2 || hasOnlyJsonFlag) {
+  if (isJsonOutput() || !isInteractiveOutput()) {
     printMachineWelcome();
+  } else {
+    printInteractiveWelcome();
   }
   process.exit(0);
 }

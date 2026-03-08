@@ -14,6 +14,17 @@ export type Env = {
 };
 
 const app = new Hono<{ Bindings: Env }>();
+const supportedTools = [
+  'claude-code',
+  'codex',
+  'cursor',
+  'amp',
+  'windsurf',
+  'opencode',
+  'cline',
+  'roo',
+  'openclaw',
+] as const;
 
 // Middleware
 app.use('*', logger());
@@ -21,6 +32,37 @@ app.use('*', cors());
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
+app.get('/', (c) => c.json({
+  name: 'skilo-api',
+  status: 'ok',
+  website: 'https://skilo.xyz',
+  docs: 'https://skilo.xyz/docs',
+  llms: 'https://skilo.xyz/llms.txt',
+  cli: 'https://www.npmjs.com/package/skilo-cli',
+  version: 'v1',
+  capabilities: [
+    'search-skills',
+    'resolve-share-links',
+    'resolve-packs',
+    'publish-skills',
+    'download-tarballs',
+  ],
+  supportedTools,
+}));
+app.get('/v1', (c) => c.json({
+  name: 'skilo-api',
+  version: 'v1',
+  docs: 'https://skilo.xyz/docs',
+  llms: 'https://skilo.xyz/llms.txt',
+  routes: {
+    health: '/health',
+    searchSkills: '/v1/skills?q=<query>',
+    getSkill: '/v1/skills/:namespace/:name',
+    resolveShare: '/v1/skills/share/:token',
+    resolvePack: '/v1/packs/:token',
+  },
+  supportedTools,
+}));
 
 // Routes
 app.route('/v1/skills', skillsRouter);

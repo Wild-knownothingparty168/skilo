@@ -1,4 +1,5 @@
 import { getClient } from '../api/client.js';
+import { exitWithError, isJsonOutput, printJson, printKeyValue, printSection, printUsage } from '../utils/output.js';
 
 function parseSkillRef(skill: string): { namespace: string; name: string } {
   const parts = skill.split('/');
@@ -10,8 +11,7 @@ function parseSkillRef(skill: string): { namespace: string; name: string } {
 
 export async function infoCommand(skill: string): Promise<void> {
   if (!skill) {
-    console.error('Usage: skilo info <namespace/name>');
-    process.exit(1);
+    printUsage(['Usage: skilo info <namespace/name>']);
   }
 
   try {
@@ -19,18 +19,26 @@ export async function infoCommand(skill: string): Promise<void> {
     const client = await getClient();
     const metadata = await client.getSkillMetadata(namespace, name);
 
-    console.log(`${metadata.namespace}/${metadata.name}`);
-    console.log(`  Description: ${metadata.description}`);
-    console.log(`  Version: ${metadata.version}`);
-    console.log(`  Size: ${formatBytes(metadata.size)}`);
-    console.log(`  Checksum: ${metadata.checksum.slice(0, 16)}...`);
-    if (metadata.author) console.log(`  Author: ${metadata.author}`);
-    if (metadata.homepage) console.log(`  Homepage: ${metadata.homepage}`);
-    if (metadata.repository) console.log(`  Repository: ${metadata.repository}`);
-    if (metadata.keywords?.length) console.log(`  Keywords: ${metadata.keywords.join(', ')}`);
+    if (isJsonOutput()) {
+      printJson({
+        command: 'info',
+        skill,
+        metadata,
+      });
+      return;
+    }
+
+    printSection(`${metadata.namespace}/${metadata.name}`, 'primary');
+    printKeyValue('description', metadata.description);
+    printKeyValue('version', metadata.version);
+    printKeyValue('size', formatBytes(metadata.size));
+    printKeyValue('checksum', `${metadata.checksum.slice(0, 16)}...`);
+    if (metadata.author) printKeyValue('author', metadata.author);
+    if (metadata.homepage) printKeyValue('homepage', metadata.homepage);
+    if (metadata.repository) printKeyValue('repository', metadata.repository);
+    if (metadata.keywords?.length) printKeyValue('keywords', metadata.keywords.join(', '));
   } catch (e) {
-    console.error(`Error: ${(e as Error).message}`);
-    process.exit(1);
+    exitWithError(`Info failed: ${(e as Error).message}`);
   }
 }
 

@@ -1,6 +1,7 @@
 // Inspect skill without installing
 import { getClient } from '../api/client.js';
-import { exitWithError, logWarn, printKeyValue, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
+import { normalizeSourceInput } from '../utils/source-kind.js';
+import { exitWithError, isJsonOutput, logWarn, printJson, printKeyValue, printNote, printPrimary, printSection, printUsage } from '../utils/output.js';
 
 export async function inspectCommand(source: string): Promise<void> {
   if (!source) {
@@ -14,6 +15,8 @@ export async function inspectCommand(source: string): Promise<void> {
   }
 
   try {
+    source = normalizeSourceInput(source);
+
     let skill: {
       name: string;
       namespace: string;
@@ -57,6 +60,16 @@ export async function inspectCommand(source: string): Promise<void> {
       }
     } else {
       throw new Error('Invalid skill reference. Use: namespace/name or https://skilo.xyz/s/...');
+    }
+
+    if (isJsonOutput()) {
+      printJson({
+        command: 'inspect',
+        source,
+        skill,
+        installCommand: `skilo add ${source}`,
+      });
+      return;
     }
 
     printSection(`${skill.namespace}/${skill.name}`, 'primary');

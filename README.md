@@ -63,6 +63,9 @@ skilo share ./my-skill --password
 # From a share link into Claude Code
 skilo add https://skilo.xyz/s/a3xK9mP2 --cc
 
+# Bare Skilo links also work
+skilo add skilo.xyz/s/a3xK9mP2 --cc
+
 # Into OpenCode
 skilo add https://skilo.xyz/s/a3xK9mP2 --oc
 
@@ -83,6 +86,9 @@ skilo import ./skill.skl
 
 ```bash
 skilo inspect https://skilo.xyz/s/a3xK9mP2
+
+# Machine-readable output for agents
+skilo inspect https://skilo.xyz/s/a3xK9mP2 --json
 ```
 
 ## CLI Commands
@@ -97,6 +103,15 @@ skilo inspect https://skilo.xyz/s/a3xK9mP2
 | `skilo publish [path]` | Publish to the registry |
 | `skilo init [name]` | Create a new skill |
 | `skilo validate` | Validate SKILL.md |
+
+## Agent-Friendly Usage
+
+Skilo is designed to work for both humans and agents.
+
+- Run `npx skilo-cli` for a guided entrypoint.
+- Run `npx skilo-cli --json` for a machine-readable starter payload.
+- Add `--json` to `share`, `add`, `import`, `inspect`, `search`, and `info` when you want structured output.
+- Set `SKILO_TARGETS=codex,cursor` to control default install targets in non-interactive environments.
 
 ## Supported Tools
 

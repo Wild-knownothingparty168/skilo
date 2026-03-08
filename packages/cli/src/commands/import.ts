@@ -5,10 +5,10 @@ import { tmpdir } from 'node:os';
 import { mkdtemp } from 'node:fs/promises';
 import * as tar from 'tar';
 import { getClient } from '../api/client.js';
-import { isRegistrySkillRef } from '../utils/source-kind.js';
+import { isRegistrySkillRef, normalizeSourceInput } from '../utils/source-kind.js';
 import { findSkillFile } from '../utils/skill-file.js';
-import { type InstallOptions, describeInstallTargets, getInstallDirs } from '../utils/install-targets.js';
-import { exitWithError, logInfo, logSuccess, printNote, printUsage } from '../utils/output.js';
+import { type InstallOptions, describeInstallTargets, getInstallDestinations, getInstallDirs } from '../utils/install-targets.js';
+import { exitWithError, isJsonOutput, logInfo, logSuccess, printJson, printNote, printUsage } from '../utils/output.js';
 
 export async function importCommand(source: string, options: InstallOptions = {}): Promise<void> {
   if (!source) {
@@ -27,6 +27,8 @@ export async function importCommand(source: string, options: InstallOptions = {}
   let cleanupPath: string | null = null;
 
   try {
+    source = normalizeSourceInput(source);
+
     if (await isRegistrySkillRef(source)) {
       const { installCommand } = await import('./install.js');
       await installCommand(source, options);
@@ -57,9 +59,19 @@ export async function importCommand(source: string, options: InstallOptions = {}
     }
 
     // Install to skills directory
-    await installSkill(skillPath, options);
+    const installResult = await installSkill(skillPath, options);
 
     logSuccess(`Imported from ${source}`);
+
+    if (isJsonOutput()) {
+      printJson({
+        command: 'import',
+        source,
+        installedSkill: installResult.name,
+        targets: installResult.targets,
+        installedDirs: installResult.installedDirs,
+      });
+    }
   } catch (e) {
     exitWithError(`Import failed: ${(e as Error).message}`);
   } finally {
@@ -87,7 +99,7 @@ async function importFromGitHub(source: string): Promise<{ skillPath: string; cl
   const response = await fetch(tarballUrl, {
     headers: {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'skilo-cli/1.0.8',
+      'User-Agent': 'skilo-cli/1.0.9',
     },
   });
 
@@ -239,7 +251,14 @@ async function importFromLocalPath(source: string): Promise<string> {
   return resolvedPath;
 }
 
-async function installSkill(skillPath: string, options: InstallOptions = {}): Promise<void> {
+async function installSkill(
+  skillPath: string,
+  options: InstallOptions = {}
+): Promise<{
+  name: string;
+  targets: Array<{ key: string; label: string; dirs: string[] }>;
+  installedDirs: string[];
+}> {
   const skillFile = await findSkillFile(skillPath);
   if (!skillFile) {
     throw new Error(`No SKILL.md or skill.md found in ${skillPath}`);
@@ -249,6 +268,8 @@ async function installSkill(skillPath: string, options: InstallOptions = {}): Pr
   const nameMatch = skillMd.match(/#\s*(.+)/);
   const name = nameMatch ? nameMatch[1].trim() : basename(skillPath);
   const installDirs = getInstallDirs(options);
+  const destinations = getInstallDestinations(options);
+  const installedDirs: string[] = [];
 
   for (const skillsDir of installDirs) {
     await mkdir(skillsDir, { recursive: true });
@@ -257,11 +278,22 @@ async function installSkill(skillPath: string, options: InstallOptions = {}): Pr
     await rm(targetDir, { recursive: true, force: true });
     await mkdir(targetDir, { recursive: true });
     await cp(skillPath, targetDir, { recursive: true });
+    installedDirs.push(targetDir);
     printNote('installed to', targetDir);
   }
 
   logSuccess('Install complete');
   printNote('targets', describeInstallTargets(options));
+
+  return {
+    name,
+    targets: destinations.map((destination) => ({
+      key: destination.key,
+      label: destination.label,
+      dirs: destination.dirs,
+    })),
+    installedDirs,
+  };
 }
 
 async function promptPassword(): Promise<string> {
