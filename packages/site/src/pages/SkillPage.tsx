@@ -1,55 +1,51 @@
-import { useParams } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { Package, ArrowLeft, FileText, Shield, Lock, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { api } from '../api/skilo';
-import TrustBadge from '../components/TrustBadge';
-import InstallBtn from '../components/InstallBtn';
-import type { SkillMetadata } from '../api/skilo';
+import { useParams } from "react-router-dom";
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { marked } from "marked";
+import { SkiloMark, CopyIcon } from "../components/icons";
+import { api } from "../api/skilo";
+import type { SkillMetadata } from "../api/skilo";
+
+const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
+const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
 
 function SkillPage() {
   const { token } = useParams<{ token: string }>();
   const [skill, setSkill] = useState<SkillMetadata | null>(null);
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [requiresPassword, setRequiresPassword] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [contentOpen, setContentOpen] = useState(false);
+  const [contentLoading, setContentLoading] = useState(false);
+  const [skillContent, setSkillContent] = useState<string | null>(null);
+  const [contentError, setContentError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSkill = async () => {
-      if (!token) {
-        setError('Invalid share link');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const data = await api.resolveShare(token);
-        if (data.requiresPassword) {
-          setRequiresPassword(true);
-          setSkill(null);
-          return;
-        }
-
-        setRequiresPassword(false);
-        setSkill(data.skill);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to load skill');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSkill();
-  }, [token]);
-
-  const handleVerifyPassword = async (event: React.FormEvent) => {
-    event.preventDefault();
     if (!token) {
-      setError('Invalid share link');
+      setError("Invalid share link");
+      setLoading(false);
       return;
     }
+
+    api
+      .resolveShare(token)
+      .then((data) => {
+        if (data.requiresPassword) {
+          setRequiresPassword(true);
+        } else {
+          setSkill(data.skill);
+        }
+      })
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load skill"))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const handleVerifyPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) return;
 
     try {
       setVerifying(true);
@@ -57,214 +53,220 @@ function SkillPage() {
       const verifiedSkill = await api.verifySharePassword(token, password);
       setSkill(verifiedSkill);
       setRequiresPassword(false);
-      setPassword('');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Invalid password');
+      setPassword("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid password");
     } finally {
       setVerifying(false);
     }
   };
 
+  const installCmd = `npx skilo-cli add skilo.xyz/s/${token}`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(installCmd);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  const toggleContent = useCallback(async () => {
+    if (contentOpen) {
+      setContentOpen(false);
+      return;
+    }
+    setContentOpen(true);
+    if (skillContent !== null) return;
+    if (!skill) return;
+    setContentLoading(true);
+    setContentError(null);
+    try {
+      const raw = await api.fetchSkillContent(skill.tarballUrl);
+      setSkillContent(raw);
+    } catch {
+      setContentError("Could not load SKILL.md");
+    } finally {
+      setContentLoading(false);
+    }
+  }, [contentOpen, skillContent, skill]);
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-skilo-600" />
-      </div>
+      <Shell>
+        <p className="text-stone-400">Loading&hellip;</p>
+      </Shell>
+    );
+  }
+
+  if (requiresPassword && !skill) {
+    return (
+      <Shell>
+        <div className="flex flex-col gap-3">
+          <p className="font-medium text-black">This skill is password protected.</p>
+          <form onSubmit={handleVerifyPassword} className="flex flex-col gap-3">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="rounded border border-stone-200 bg-white px-3 py-2 text-sm outline-none focus:border-stone-400 transition-colors"
+            />
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <button
+              type="submit"
+              disabled={verifying || password.length === 0}
+              className={`${PRIMARY_BTN} w-fit disabled:opacity-50`}
+            >
+              {verifying ? "Checking\u2026" : "Continue"}
+            </button>
+          </form>
+        </div>
+      </Shell>
     );
   }
 
   if (error || !skill) {
-    if (requiresPassword) {
-      return (
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <div className="w-full max-w-md">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-skilo-100 dark:bg-skilo-900/30 flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8 text-skilo-600 dark:text-skilo-400" />
-              </div>
-              <h1 className="text-2xl font-bold mb-2">Password protected</h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Enter the password to access this skill.
-              </p>
-            </div>
-
-            <form onSubmit={handleVerifyPassword} className="space-y-4">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-skilo-500 focus:border-transparent outline-none"
-              />
-              {error && (
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              )}
-              <button
-                type="submit"
-                disabled={verifying || password.length === 0}
-                className="w-full px-4 py-3 bg-skilo-600 hover:bg-skilo-700 disabled:opacity-60 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                {verifying ? 'Checking...' : 'Continue'}
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Skill not found</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            The skill you're looking for doesn't exist or has expired.
-          </p>
-          <Link to="/" className="text-skilo-600 hover:text-skilo-700">
-            Go home
-          </Link>
-        </div>
-      </div>
+      <Shell>
+        <p className="font-medium text-black">Skill not found</p>
+        <p className="text-stone-500">
+          {error || "This link may be invalid or expired."}
+        </p>
+        <Link to="/" className={NAV_LINK}>
+          Back to home
+        </Link>
+      </Shell>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Link>
-          </div>
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-skilo-600 flex items-center justify-center">
-              <Package className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold">Skilo</span>
-          </Link>
+    <Shell>
+      {/* Name + version */}
+      <div className="flex flex-col gap-1">
+        <p className="text-lg font-medium text-black tracking-[-0.01em]">
+          {skill.namespace}/{skill.name}
+        </p>
+        {skill.description && (
+          <p className="text-stone-500">{skill.description}</p>
+        )}
+        <p className="text-xs text-stone-400 mt-1">
+          v{skill.version}
+          {skill.author && <> &middot; {skill.author}</>}
+        </p>
+      </div>
+
+      {/* Install */}
+      <div className="mt-6 flex flex-col gap-2">
+        <p className="text-sm font-medium text-black">Install</p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 overflow-x-auto rounded bg-stone-100 px-3 py-2 font-mono text-[13px] whitespace-nowrap">
+            {installCmd}
+          </code>
+          <button type="button" onClick={handleCopy} className={PRIMARY_BTN}>
+            <CopyIcon className="h-4 w-4" />
+            {copied ? "Copied" : "Copy"}
+          </button>
         </div>
+      </div>
+
+      {/* Details */}
+      <div className="mt-6 flex flex-col gap-3">
+        <p className="text-sm font-medium text-black">Details</p>
+
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <dt className="text-stone-400">Checksum</dt>
+          <dd className="font-mono text-[13px] text-stone-500 truncate">{skill.checksum}</dd>
+
+          <dt className="text-stone-400">Size</dt>
+          <dd className="text-stone-500">{(skill.size / 1024).toFixed(1)} KB</dd>
+
+          {skill.homepage && (
+            <>
+              <dt className="text-stone-400">Homepage</dt>
+              <dd>
+                <a href={skill.homepage} target="_blank" rel="noopener noreferrer" className={NAV_LINK}>
+                  {skill.homepage}
+                </a>
+              </dd>
+            </>
+          )}
+
+          {skill.repository && (
+            <>
+              <dt className="text-stone-400">Repository</dt>
+              <dd>
+                <a href={skill.repository} target="_blank" rel="noopener noreferrer" className={NAV_LINK}>
+                  {skill.repository}
+                </a>
+              </dd>
+            </>
+          )}
+        </dl>
+
+        {skill.keywords.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {skill.keywords.map((kw) => (
+              <span key={kw} className="rounded bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
+                {kw}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SKILL.md content */}
+      <div className="mt-6 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={toggleContent}
+          className="flex items-center gap-2 text-sm font-medium text-black w-fit cursor-pointer"
+        >
+          <svg
+            className={`h-3.5 w-3.5 text-stone-400 transition-transform duration-150 ${contentOpen ? "rotate-90" : ""}`}
+            viewBox="0 0 16 16"
+            fill="currentColor"
+          >
+            <path d="M6.22 3.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 0 1 0-1.06Z" />
+          </svg>
+          SKILL.md
+        </button>
+
+        {contentOpen && (
+          <div className="rounded border border-stone-200 bg-stone-50 overflow-hidden">
+            {contentLoading && (
+              <p className="px-4 py-3 text-sm text-stone-400">Loading&hellip;</p>
+            )}
+            {contentError && (
+              <p className="px-4 py-3 text-sm text-red-600">{contentError}</p>
+            )}
+            {skillContent !== null && !contentLoading && (
+              <div
+                className="skill-md px-5 py-4 text-sm leading-relaxed text-stone-700 overflow-x-auto"
+                dangerouslySetInnerHTML={{ __html: marked.parse(skillContent, { async: false }) as string }}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    </Shell>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white">
+        <nav className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 lg:px-10 lg:py-4">
+          <Link to="/" className="flex items-center gap-2 font-medium">
+            <SkiloMark className="h-5 w-5" />
+            Skilo
+          </Link>
+        </nav>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
-                {skill.namespace}/{skill.name}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
-                {skill.description}
-              </p>
-              <TrustBadge status="anonymous" publisher={skill.author || undefined} />
-            </div>
-            <div className="text-right">
-              <span className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-                v{skill.version}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Install */}
-        <div className="mb-12 p-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4">
-            Install
-          </h2>
-          <InstallBtn
-            skillId={skill.namespace + '/' + skill.name}
-            namespace={skill.namespace}
-            name={skill.name}
-            command={`npx skilo-cli add https://skilo.xyz/s/${token}`}
-          />
-        </div>
-
-        {/* Details */}
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4">
-              Details
-            </h2>
-            <dl className="space-y-3">
-              {skill.homepage && (
-                <div>
-                  <dt className="text-sm text-gray-500 dark:text-gray-400">Homepage</dt>
-                  <dd>
-                    <a
-                      href={skill.homepage}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-skilo-600 hover:text-skilo-700"
-                    >
-                      {skill.homepage}
-                    </a>
-                  </dd>
-                </div>
-              )}
-              {skill.repository && (
-                <div>
-                  <dt className="text-sm text-gray-500 dark:text-gray-400">Repository</dt>
-                  <dd>
-                    <a
-                      href={skill.repository}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-skilo-600 hover:text-skilo-700"
-                    >
-                      {skill.repository}
-                    </a>
-                  </dd>
-                </div>
-              )}
-              {skill.keywords.length > 0 && (
-                <div>
-                  <dt className="text-sm text-gray-500 dark:text-gray-400">Keywords</dt>
-                  <dd className="flex flex-wrap gap-2">
-                    {skill.keywords.map(kw => (
-                      <span
-                        key={kw}
-                        className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-xs"
-                      >
-                        {kw}
-                      </span>
-                    ))}
-                  </dd>
-                </div>
-              )}
-            </dl>
-          </div>
-
-          <div>
-            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide mb-4">
-              Verification
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                <Shield className="w-5 h-5 text-gray-400" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Checksum</p>
-                  <code className="text-xs text-gray-500 dark:text-gray-400 truncate block">
-                    {skill.checksum}
-                  </code>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-                <FileText className="w-5 h-5 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium">Size</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {(skill.size / 1024).toFixed(2)} KB
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <main className="flex flex-col gap-4 max-w-[600px] mx-auto p-5 pt-28 pb-20 lg:p-10 lg:pt-32 lg:pb-32 leading-relaxed text-base">
+        {children}
       </main>
-    </div>
+    </>
   );
 }
 

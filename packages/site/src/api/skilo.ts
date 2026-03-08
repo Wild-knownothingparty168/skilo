@@ -62,6 +62,49 @@ export const api = {
     return res.json();
   },
 
+  async fetchSkillContent(tarballUrl: string): Promise<string> {
+    const url = tarballUrl.startsWith('http') ? tarballUrl : `${API_BASE}${tarballUrl}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Failed to fetch skill content');
+
+    const decompressed = res.body!.pipeThrough(new DecompressionStream('gzip'));
+    const reader = decompressed.getReader();
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+
+    const total = chunks.reduce((sum, c) => sum + c.length, 0);
+    const buffer = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    // Parse tar: find SKILL.md or skill.md
+    let pos = 0;
+    const decoder = new TextDecoder();
+    while (pos + 512 <= buffer.length) {
+      const header = buffer.slice(pos, pos + 512);
+      if (header.every((b) => b === 0)) break;
+
+      const fileName = decoder.decode(header.slice(0, 100)).replace(/\0.*$/, '').trim();
+      const sizeStr = decoder.decode(header.slice(124, 136)).replace(/\0.*$/, '').trim();
+      const fileSize = parseInt(sizeStr, 8) || 0;
+
+      pos += 512;
+      if (/^(skill\.md|SKILL\.md)$/i.test(fileName.split('/').pop() || '')) {
+        return decoder.decode(buffer.slice(pos, pos + fileSize));
+      }
+      pos += Math.ceil(fileSize / 512) * 512;
+    }
+
+    throw new Error('SKILL.md not found in tarball');
+  },
+
   async verifySharePassword(token: string, password: string): Promise<SkillMetadata> {
     const res = await fetch(`${API_BASE}/v1/skills/share/${token}/verify`, {
       method: 'POST',

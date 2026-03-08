@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background: #ffffff;
   color: #0a0a0a;
@@ -18,4 +22,59 @@ body {
 
 .cursor-blink {
   animation: blink 1.2s step-end infinite;
+}
+
+/* Rendered SKILL.md */
+.skill-md h1, .skill-md h2, .skill-md h3 {
+  color: #0a0a0a;
+  font-weight: 600;
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+}
+.skill-md h1 { font-size: 1.25em; }
+.skill-md h2 { font-size: 1.1em; }
+.skill-md h3 { font-size: 1em; }
+.skill-md h1:first-child, .skill-md h2:first-child, .skill-md h3:first-child { margin-top: 0; }
+.skill-md p { margin-bottom: 0.75em; }
+.skill-md p:last-child { margin-bottom: 0; }
+.skill-md ul, .skill-md ol { padding-left: 1.25em; margin-bottom: 0.75em; }
+.skill-md ul { list-style: disc; }
+.skill-md ol { list-style: decimal; }
+.skill-md li { margin-bottom: 0.25em; }
+.skill-md code {
+  background: #e7e5e4;
+  border-radius: 3px;
+  padding: 0.15em 0.4em;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+.skill-md pre {
+  background: #1c1917;
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  margin-bottom: 0.75em;
+  overflow-x: auto;
+}
+.skill-md pre code {
+  background: transparent;
+  padding: 0;
+  color: #d6d3d1;
+  font-size: 0.85em;
+}
+.skill-md a {
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+  text-decoration-color: rgba(168, 162, 158, 0.5);
+}
+.skill-md a:hover { text-decoration-color: rgba(120, 113, 108, 1); }
+.skill-md blockquote {
+  border-left: 3px solid #d6d3d1;
+  padding-left: 1em;
+  color: #78716c;
+  margin-bottom: 0.75em;
+}
+.skill-md hr {
+  border: none;
+  border-top: 1px solid #e7e5e4;
+  margin: 1em 0;
 }
