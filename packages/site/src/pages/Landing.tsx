@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CopyIcon } from "../components/icons";
+import { api } from "../api/skilo";
 import {
   Claude,
   Codex,
@@ -40,8 +41,15 @@ function Landing() {
   const [input, setInput] = useState("");
   const [installCopied, setInstallCopied] = useState(false);
   const [addCopied, setAddCopied] = useState(false);
+  const [stats, setStats] = useState<{ skills: number; installs: number } | null>(null);
 
   const resolved = useMemo(() => parseInput(input), [input]);
+
+  useEffect(() => {
+    api.getStats().then((s) => {
+      if (s.skills > 0 || s.installs > 0) setStats(s);
+    });
+  }, []);
 
   function handleInstallCopy() {
     navigator.clipboard.writeText("npx skilo-cli");
@@ -130,6 +138,16 @@ function Landing() {
         </div>
 
         <p className="text-xs text-stone-400">
+          {stats && (
+            <>
+              <span className="tabular-nums">{stats.skills.toLocaleString()}</span>
+              {" "}skill{stats.skills !== 1 ? "s" : ""} published
+              <span className="text-stone-300 mx-1">&middot;</span>
+              <span className="tabular-nums">{stats.installs.toLocaleString()}</span>
+              {" "}install{stats.installs !== 1 ? "s" : ""}
+              <span className="text-stone-300 mx-1">&middot;</span>
+            </>
+          )}
           No account required.{" "}
           <Link to="/docs" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">
             Read the docs&nbsp;&rarr;

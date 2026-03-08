@@ -71,6 +71,16 @@ app.get('/v1', (c) => c.json({
   supportedTools,
 }));
 
+// Stats
+app.get('/v1/stats', async (c) => {
+  const [skills, installs] = await Promise.all([
+    c.env.DB.prepare('SELECT COUNT(*) as count FROM skills').first<{ count: number }>(),
+    c.env.DB.prepare('SELECT COALESCE(SUM(uses_count),0) as count FROM share_links').first<{ count: number }>(),
+  ]);
+  c.header('Cache-Control', 'public, max-age=60');
+  return c.json({ skills: skills?.count || 0, installs: installs?.count || 0 });
+});
+
 // Routes
 app.route('/v1/skills', skillsRouter);
 app.route('/v1/auth', authRouter);

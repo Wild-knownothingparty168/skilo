@@ -60,7 +60,18 @@ export interface PackData {
   skills: PackSkill[];
 }
 
+export interface SiteStats {
+  skills: number;
+  installs: number;
+}
+
 export const api = {
+  async getStats(): Promise<SiteStats> {
+    const res = await fetch(`${API_BASE}/v1/stats`);
+    if (!res.ok) return { skills: 0, installs: 0 };
+    return res.json();
+  },
+
   async getSkill(namespace: string, name: string): Promise<SkillMetadata> {
     const res = await fetch(`${API_BASE}/v1/skills/${namespace}/${name}`);
     if (!res.ok) throw new Error('Skill not found');
