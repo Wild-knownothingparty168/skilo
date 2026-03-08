@@ -47,6 +47,13 @@ export interface RepoSkillShorthand {
   githubSource: string;
 }
 
+export interface RepoPathShorthand {
+  owner: string;
+  repo: string;
+  path: string;
+  githubSource: string;
+}
+
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -235,6 +242,7 @@ export function isGitHubRepoLike(source: string): boolean {
     source.startsWith('github:') ||
     /^https?:\/\/skills\.sh\/[^/]+\/[^/]+(?:\/[^/?#]+)?(?:[?#].*)?$/i.test(source) ||
     /^https?:\/\/github\.com\/[^/]+\/[^/]+/i.test(source) ||
+    /^[^/@\s]+\/[^/@:\s]+:.+$/.test(source) ||
     /^[^/@\s]+\/[^/@\s]+$/.test(source)
   );
 }
@@ -272,10 +280,35 @@ export function parseRepoSkillShorthand(source: string): RepoSkillShorthand | nu
   };
 }
 
+export function parseRepoPathShorthand(source: string): RepoPathShorthand | null {
+  const match = source.match(/^([^/@\s]+)\/([^/@:\s]+):(.+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, owner, repo, rawPath] = match;
+  const path = rawPath.replace(/^\/+|\/+$/g, '');
+  if (!path) {
+    return null;
+  }
+
+  return {
+    owner,
+    repo,
+    path,
+    githubSource: `github:${owner}/${repo}#${path}`,
+  };
+}
+
 export function normalizeGitHubSource(source: string): string {
   const skillsShSource = parseSkillsShSource(source);
   if (skillsShSource) {
     return skillsShSource.githubSource;
+  }
+
+  const repoPathShorthand = parseRepoPathShorthand(source);
+  if (repoPathShorthand) {
+    return repoPathShorthand.githubSource;
   }
 
   if (source.startsWith('github:')) {

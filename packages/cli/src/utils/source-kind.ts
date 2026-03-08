@@ -1,5 +1,6 @@
 import { access } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { parseRepoPathShorthand } from './repo-skills.js';
 
 export function normalizeSourceInput(source: string): string {
   const trimmed = source.trim();
@@ -21,6 +22,10 @@ export function normalizeSourceInput(source: string): string {
 
 export async function isRegistrySkillRef(source: string): Promise<boolean> {
   source = normalizeSourceInput(source);
+
+  if (parseRepoPathShorthand(source)) {
+    return false;
+  }
 
   if (
     source.startsWith('github:') ||

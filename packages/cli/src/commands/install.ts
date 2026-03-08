@@ -17,7 +17,7 @@ import {
 } from '../utils/install-targets.js';
 import { exitWithError, isJsonOutput, logInfo, logSuccess, printJson, printNote, printUsage } from '../utils/output.js';
 import { printTrustSummary } from '../utils/trust.js';
-import { isGitHubRepoLike, parseRepoSkillShorthand } from '../utils/repo-skills.js';
+import { isGitHubRepoLike, parseRepoPathShorthand, parseRepoSkillShorthand } from '../utils/repo-skills.js';
 
 function looksLikeRegistryVersion(value: string): boolean {
   return /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value);
@@ -46,6 +46,12 @@ export async function installCommand(skill: string, options: InstallOptions = {}
         ...options,
         skill: options.skill?.length ? options.skill : [repoSkillShorthand.skill],
       });
+      return;
+    }
+
+    if (parseRepoPathShorthand(skill)) {
+      const { importCommand } = await import('./import.js');
+      await importCommand(skill, options);
       return;
     }
 

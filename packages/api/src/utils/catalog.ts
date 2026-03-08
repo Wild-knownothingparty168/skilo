@@ -117,6 +117,30 @@ function parseRepoShorthand(input: string): { owner: string; repo: string; skill
   return { owner: match[1], repo: match[2], skill: match[3] };
 }
 
+function parseRepoPathShorthand(input: string): { owner: string; repo: string; path: string; skill: string } | null {
+  const match = input.trim().match(/^([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+):(.+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const path = match[3].replace(/^\/+|\/+$/g, '');
+  if (!path) {
+    return null;
+  }
+
+  const lastSegment = path.split('/').filter(Boolean).pop();
+  if (!lastSegment) {
+    return null;
+  }
+
+  return {
+    owner: match[1],
+    repo: match[2],
+    path,
+    skill: lastSegment.replace(/\.md$/i, ''),
+  };
+}
+
 function parseSkillsShUrl(input: string): { owner: string; repo: string; skill: string } | null {
   const match = input.trim().match(/^https?:\/\/skills\.sh\/([^/]+)\/([^/]+)\/([^/?#]+)\/?$/i);
   if (!match) {
@@ -306,6 +330,23 @@ export async function resolveCatalogEntry(env: Env, input: string): Promise<Cata
   const shorthand = parseRepoShorthand(trimmed);
   if (shorthand) {
     return toExternalCatalogEntry({ sourceKind: 'github', ...shorthand });
+  }
+
+  const repoPath = parseRepoPathShorthand(trimmed);
+  if (repoPath) {
+    return {
+      id: `github:${repoPath.owner}/${repoPath.repo}:${repoPath.path}`,
+      sourceKind: 'github',
+      canonicalRef: `${repoPath.owner}/${repoPath.repo}:${repoPath.path}`,
+      installRef: `${repoPath.owner}/${repoPath.repo}:${repoPath.path}`,
+      owner: `${repoPath.owner}/${repoPath.repo}`,
+      name: repoPath.skill,
+      description: `Public GitHub skill source at ${repoPath.path}.`,
+      homepage: null,
+      repository: `https://github.com/${repoPath.owner}/${repoPath.repo}`,
+      pageUrl: `https://github.com/${repoPath.owner}/${repoPath.repo}/tree/main/${repoPath.path}`,
+      trust: buildExternalTrust('github'),
+    };
   }
 
   const github = parseGitHubUrl(trimmed);
