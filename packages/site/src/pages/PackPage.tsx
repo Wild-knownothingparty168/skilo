@@ -7,9 +7,17 @@ import type { PackData } from "../api/skilo";
 const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
 const MAIN = "flex flex-col gap-4 max-w-[600px] mx-auto p-5 pt-28 pb-20 lg:p-10 lg:pt-32 lg:pb-32 leading-relaxed text-base";
 
+interface RefPackData {
+  type: "ref-pack";
+  token: string;
+  refs: string[];
+  items?: Array<{ ref: string; token: string; url: string }>;
+}
+
 function PackPage() {
   const { token } = useParams<{ token: string }>();
   const [pack, setPack] = useState<PackData | null>(null);
+  const [refPack, setRefPack] = useState<RefPackData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -25,12 +33,17 @@ function PackPage() {
     if (!token) return;
     api
       .resolvePack(token)
-      .then((data) => {
-        setPack(data);
-        setActiveToken(data.token);
-        const all: Record<number, boolean> = {};
-        data.skills.forEach((_, i) => { all[i] = true; });
-        setSelected(all);
+      .then((data: any) => {
+        if (data.type === "ref-pack") {
+          setRefPack(data as RefPackData);
+          setActiveToken(data.token);
+        } else {
+          setPack(data);
+          setActiveToken(data.token);
+          const all: Record<number, boolean> = {};
+          data.skills.forEach((_: any, i: number) => { all[i] = true; });
+          setSelected(all);
+        }
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -119,6 +132,80 @@ function PackPage() {
     return (
       <main className={MAIN}>
         <p className="text-stone-400">Loading&hellip;</p>
+      </main>
+    );
+  }
+
+  if (refPack) {
+    const refInstallCmd = `npx skilo-cli add skilo.xyz/p/${refPack.token}`;
+    const items = refPack.items || refPack.refs.map((ref) => ({ ref, token: "", url: "" }));
+
+    return (
+      <main className={MAIN}>
+        <div className="flex flex-col gap-1">
+          <p className="text-lg font-medium text-black tracking-[-0.01em]">
+            Skill Pack
+          </p>
+          <div className="flex items-center gap-2 text-xs text-stone-400">
+            <span>{items.length} ref{items.length !== 1 ? "s" : ""}</span>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-stone-800/80 shadow-lg shadow-stone-900/5">
+          <div className="flex items-center justify-between border-b border-stone-800/60 bg-stone-900 px-4 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await navigator.clipboard.writeText(refInstallCmd);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-300 transition-colors cursor-pointer"
+            >
+              <CopyIcon className="h-3 w-3" />
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="bg-stone-950 px-5 py-4 font-mono text-[13px] leading-6">
+            <div>
+              <span className="text-stone-600">$ </span>
+              <span className="text-stone-200">{refInstallCmd}</span>
+            </div>
+            <div className="pl-4 text-stone-500">
+              &#10003; {items.length} skill{items.length !== 1 ? "s" : ""} installed
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-stone-400 -mt-1">
+          Auto-detects installed tools. Resolves refs and installs all skills.
+        </p>
+
+        <div className="mt-6 flex flex-col gap-2">
+          <p className="text-sm font-medium text-black">Refs</p>
+          <div className="flex flex-col gap-2">
+            {items.map((item) => (
+              <div
+                key={item.ref}
+                className="flex items-center justify-between rounded-lg border border-stone-200 px-4 py-3"
+              >
+                <p className="text-sm text-stone-700 font-mono">{item.ref}</p>
+                {item.token && (
+                  <Link
+                    to={`/s/${item.token}`}
+                    className="shrink-0 text-stone-300 text-sm hover:text-stone-500 transition-colors"
+                  >
+                    &rarr;
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </main>
     );
   }

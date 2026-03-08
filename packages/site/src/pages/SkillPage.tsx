@@ -14,6 +14,7 @@ function SkillPage() {
   const [skill, setSkill] = useState<SkillMetadata | null>(null);
   const [linkInfo, setLinkInfo] = useState<ShareLinkInfo | null>(null);
   const [trust, setTrust] = useState<SkillMetadata["trust"] | null>(null);
+  const [refLink, setRefLink] = useState<{ ref: string; token: string } | null>(null);
   const [password, setPassword] = useState("");
   const [requiresPassword, setRequiresPassword] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -34,13 +35,15 @@ function SkillPage() {
 
     api
       .resolveShare(token)
-      .then((data) => {
-        if (data.requiresPassword) {
+      .then((data: any) => {
+        if (data.type === "ref-link") {
+          setRefLink({ ref: data.ref, token: data.token });
+        } else if (data.requiresPassword) {
           setRequiresPassword(true);
         } else {
           setSkill(data.skill);
           setLinkInfo(data.link || null);
-          setTrust(data.trust || data.skill.trust || null);
+          setTrust(data.trust || data.skill?.trust || null);
         }
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load skill"))
@@ -90,6 +93,55 @@ function SkillPage() {
     return (
       <main className={MAIN}>
         <p className="text-stone-400">Loading&hellip;</p>
+      </main>
+    );
+  }
+
+  if (refLink) {
+    const refInstallCmd = `npx skilo-cli add ${refLink.ref}`;
+    return (
+      <main className={MAIN}>
+        <div className="flex flex-col gap-1">
+          <p className="text-lg font-medium text-black tracking-[-0.01em]">
+            {refLink.ref}
+          </p>
+          <p className="text-stone-500 text-sm">Skill reference</p>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-xl border border-stone-800/80 shadow-lg shadow-stone-900/5">
+          <div className="flex items-center justify-between border-b border-stone-800/60 bg-stone-900 px-4 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(refInstallCmd);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-300 transition-colors cursor-pointer"
+            >
+              <CopyIcon className="h-3 w-3" />
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          <div className="bg-stone-950 px-5 py-4 font-mono text-[13px] leading-6">
+            <div>
+              <span className="text-stone-600">$ </span>
+              <span className="text-stone-200">{refInstallCmd}</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-stone-400 -mt-1">
+          Auto-detects installed tools. Resolves the ref and installs the skill.
+        </p>
+
+        <Link to="/" className={NAV_LINK}>
+          Back to home
+        </Link>
       </main>
     );
   }
