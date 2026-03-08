@@ -10,7 +10,7 @@ import type {
   Config,
 } from '../types.js';
 
-const DEFAULT_API_URL = 'https://api.skilo.dev';
+const DEFAULT_API_URL = 'https://skilo-api.yaz-b35.workers.dev';
 
 function resolveBaseUrl(configBaseUrl?: string): string {
   return process.env.SKILO_API_BASE_URL || configBaseUrl || DEFAULT_API_URL;
@@ -42,7 +42,7 @@ export class ApiClient {
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'User-Agent': 'skilo-cli/1.0.2',
+      'User-Agent': 'skilo-cli/1.0.3',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -133,7 +133,7 @@ export class ApiClient {
     const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
-        'User-Agent': 'skilo-cli/1.0.2',
+        'User-Agent': 'skilo-cli/1.0.3',
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       },
       body: formData,
