@@ -23,7 +23,7 @@ function PackPage() {
   const handleCopy = async () => {
     if (!pack) return;
     const commands = pack.skills
-      .map((s) => `npx @skilo/cli add ${s.namespace}/${s.name}`)
+      .map((s) => `npx skilo-cli add ${s.namespace}/${s.name}`)
       .join('\n');
     await navigator.clipboard.writeText(commands);
     setCopied(true);
