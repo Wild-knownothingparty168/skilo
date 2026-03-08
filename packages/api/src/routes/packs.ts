@@ -366,7 +366,7 @@ packsRouter.post('/subset', rateLimiters.createPack, async (c) => {
   }
 });
 
-// Create a ref pack (arbitrary refs stored in KV)
+// Create a ref pack (each ref → skilo.xyz/s/ link, all → skilo.xyz/p/ pack)
 packsRouter.post('/from-refs', rateLimiters.createPack, async (c) => {
   const body = await c.req.json();
   const rawRefs = body.refs;
@@ -384,21 +384,42 @@ packsRouter.post('/from-refs', rateLimiters.createPack, async (c) => {
   }
 
   try {
-    const seed = `ref-pack:${JSON.stringify([...refs].sort())}`;
-    const token = await createDeterministicToken(seed);
-
-    const existing = await c.env.SKILLPACK_KV.get(`ref-pack:${token}`);
-    if (existing) {
-      return c.json({ token, url: `https://skilo.xyz/p/${token}`, count: refs.length });
-    }
-
-    await c.env.SKILLPACK_KV.put(
-      `ref-pack:${token}`,
-      JSON.stringify({ refs, createdAt: Date.now() }),
-      { expirationTtl: 7776000 } // 90 days
+    // Generate individual ref-link tokens in parallel
+    const items = await Promise.all(
+      refs.map(async (ref: string) => {
+        const refToken = await createDeterministicToken(`ref-link:${ref}`);
+        return { ref, token: refToken, url: `https://skilo.xyz/s/${refToken}` };
+      })
     );
 
-    return c.json({ token, url: `https://skilo.xyz/p/${token}`, count: refs.length }, 201);
+    // Store all ref-links in KV (parallel, idempotent via deterministic tokens)
+    await Promise.all(
+      items.map((item) =>
+        c.env.SKILLPACK_KV.put(
+          `ref-link:${item.token}`,
+          JSON.stringify({ ref: item.ref, createdAt: Date.now() }),
+          { expirationTtl: 7776000 }
+        )
+      )
+    );
+
+    // Create pack
+    const packSeed = `ref-pack:${JSON.stringify([...refs].sort())}`;
+    const packToken = await createDeterministicToken(packSeed);
+
+    const existing = await c.env.SKILLPACK_KV.get(`ref-pack:${packToken}`);
+    if (!existing) {
+      await c.env.SKILLPACK_KV.put(
+        `ref-pack:${packToken}`,
+        JSON.stringify({ refs, items, createdAt: Date.now() }),
+        { expirationTtl: 7776000 }
+      );
+    }
+
+    return c.json(
+      { token: packToken, url: `https://skilo.xyz/p/${packToken}`, count: refs.length, items },
+      existing ? 200 : 201
+    );
   } catch (e) {
     console.error('Ref pack creation error:', e);
     return c.json({ error: 'create_failed', message: (e as Error).message }, 500);
@@ -414,13 +435,14 @@ packsRouter.get('/:token', rateLimiters.resolveShare, async (c) => {
 
     if (!pack) {
       // Fallback: check KV for ref packs
-      const refPack = await c.env.SKILLPACK_KV.get(`ref-pack:${token}`, { type: 'json' }) as { refs: string[]; createdAt: number } | null;
+      const refPack = await c.env.SKILLPACK_KV.get(`ref-pack:${token}`, { type: 'json' }) as { refs: string[]; items?: Array<{ ref: string; token: string; url: string }>; createdAt: number } | null;
       if (refPack) {
         return c.json({
           name: null,
           token,
           type: 'ref-pack',
           refs: refPack.refs,
+          items: refPack.items,
         });
       }
       return c.json({ error: 'not_found', message: 'Pack not found' }, 404);
