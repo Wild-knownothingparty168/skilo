@@ -87,10 +87,10 @@ function Landing() {
         {/* ── Hero ── */}
         <div className="flex flex-col gap-2">
           <p className="text-lg font-medium text-black tracking-[-0.01em]">
-            Share agent skills with a link.
+            Skill handoff for humans and agents.
           </p>
           <p className="text-stone-500">
-            Publish and install SKILL.md files across Claude Code, Cursor, Codex, and every AI coding tool.
+            Share a skill, install it into the right tool, or point an agent at Skilo and let it figure out the next step quickly.
           </p>
 
           <div className="mt-3 flex items-center gap-3">
@@ -111,6 +111,14 @@ function Landing() {
               Read the docs&nbsp;&rarr;
             </Link>
           </p>
+
+          <div className="mt-4 rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600">
+            <p className="font-medium text-stone-900">Start in one step</p>
+            <p className="mt-1">
+              Humans can run <code className="rounded bg-white px-1.5 py-0.5 font-mono text-[13px]">npx skilo-cli</code>.
+              Agents can read <a href="/llms.txt" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">/llms.txt</a>.
+            </p>
+          </div>
         </div>
 
         {/* ── Terminal ── */}
@@ -175,10 +183,19 @@ function Landing() {
 
             <div>
               <p className="text-sm">
-                <span className="font-medium">Bulk share</span>
+                <span className="font-medium">Route automatically</span>
               </p>
               <p className="text-stone-500 text-sm mt-1">
-                <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo share claude</code> discovers and shares every skill from a tool at once. Also supports <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">cursor</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">codex</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">amp</code>, and more.
+                <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo add</code> and <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo import</code> accept links, refs, bundles, GitHub sources, and local paths. Use target flags like <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--cc</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--codex</code>, or <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">--oc</code> to land in the right tool.
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm">
+                <span className="font-medium">Scale up</span>
+              </p>
+              <p className="text-stone-500 text-sm mt-1">
+                <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">skilo share claude</code> discovers and shares every skill from a tool at once. It also supports <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">cursor</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">codex</code>, <code className="rounded bg-stone-100 px-1.5 py-0.5 font-mono text-[13px]">amp</code>, and the rest of the native directory matrix.
               </p>
             </div>
           </div>

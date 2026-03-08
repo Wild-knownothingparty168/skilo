@@ -23,6 +23,7 @@ import { claimCommand } from './commands/claim.js';
 import { exportCommand } from './commands/export.js';
 import { importCommand } from './commands/import.js';
 import { inspectCommand } from './commands/inspect.js';
+import { blankLine, isInteractiveOutput, printPrimary, printSection } from './utils/output.js';
 
 const program = new Command();
 function addInstallTargetOptions(command: Command): Command {
@@ -44,7 +45,21 @@ function addInstallTargetOptions(command: Command): Command {
 program
   .name('skilo')
   .description('Tiny sharing layer for agent skills')
-  .version('1.0.7');
+  .version('1.0.8');
+
+program.showSuggestionAfterError(true);
+program.showHelpAfterError('\nRun "skilo --help" for usage.');
+program.addHelpText('after', `
+Quick start:
+  skilo share ./my-skill
+  skilo add https://skilo.xyz/s/abc123 --cc
+  skilo add namespace/skill-name --codex
+  skilo inspect namespace/skill-name
+
+Agent entrypoints:
+  https://skilo.xyz/llms.txt
+  skilo --help
+`);
 
 // Auth (optional)
 program.command('login').description('Login to publish skills').action(loginCommand);
@@ -131,5 +146,56 @@ program.command('sync').description('Sync skills with lockfile').action(syncComm
 program.command('init [name]').description('Create new skill').action((name) => initCommand(name));
 program.command('validate').description('Validate SKILL.md').action(validateCommand);
 program.command('pack').description('Create .tgz bundle').action(packCommand);
+
+function printInteractiveWelcome(): void {
+  printSection('Skilo');
+  printPrimary('Share, install, inspect, and publish agent skills.');
+  blankLine();
+
+  printSection('Most common');
+  printPrimary('  Share a local skill');
+  printPrimary('    skilo share ./my-skill');
+  printPrimary('  Install from a Skilo link');
+  printPrimary('    skilo add https://skilo.xyz/s/abc123 --cc');
+  printPrimary('  Install from the registry');
+  printPrimary('    skilo add namespace/skill-name --codex');
+  printPrimary('  Review before installing');
+  printPrimary('    skilo inspect namespace/skill-name');
+  blankLine();
+
+  printSection('Works with');
+  printPrimary('  Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, OpenClaw');
+  blankLine();
+
+  printSection('Start as an agent');
+  printPrimary('  Read https://skilo.xyz/llms.txt');
+  printPrimary('  Or run skilo --help for the full command surface');
+  blankLine();
+
+  printSection('Docs');
+  printPrimary('  https://skilo.xyz');
+  printPrimary('  https://skilo.xyz/docs');
+}
+
+function printMachineWelcome(): void {
+  printPrimary('skilo-cli');
+  printPrimary('purpose\tshare, install, inspect, and publish agent skills');
+  printPrimary('share_local\tskilo share ./my-skill');
+  printPrimary('install_link\tskilo add https://skilo.xyz/s/abc123 --cc');
+  printPrimary('install_ref\tskilo add namespace/skill-name --codex');
+  printPrimary('inspect\tskilo inspect namespace/skill-name');
+  printPrimary('docs\thttps://skilo.xyz/docs');
+  printPrimary('llms\thttps://skilo.xyz/llms.txt');
+  printPrimary('help\tskilo --help');
+}
+
+if (process.argv.length <= 2) {
+  if (isInteractiveOutput()) {
+    printInteractiveWelcome();
+  } else {
+    printMachineWelcome();
+  }
+  process.exit(0);
+}
 
 program.parse();
