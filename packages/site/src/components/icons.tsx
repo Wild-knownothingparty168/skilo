@@ -8,7 +8,7 @@ export function SkiloMark({ className }: { className?: string }) {
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      <rect x="0" y="5" width="11" height="11" rx="2" fill="currentColor" opacity="0.28" />
+      <rect x="0" y="5" width="11" height="11" rx="2" fill="#6ee7b7" opacity="0.55" />
       <rect x="7" y="0" width="11" height="11" rx="2" fill="currentColor" />
     </svg>
   );

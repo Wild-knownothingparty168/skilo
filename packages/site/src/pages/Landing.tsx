@@ -5,6 +5,7 @@ import { SkiloMark, CopyIcon, ExternalLinkIcon, HamburgerIcon } from "../compone
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 
 const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
+const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
 const FOOTER_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
 
 function Landing() {
@@ -34,7 +35,7 @@ function Landing() {
             Skilo
           </a>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 sm:gap-6">
             <span className="hidden items-center gap-4 text-sm sm:flex">
               <Link to="/docs" className={NAV_LINK}>Docs</Link>
               <a
@@ -47,6 +48,10 @@ function Landing() {
                 <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 align-baseline" />
               </a>
             </span>
+
+            <Link to="/docs" className={PRIMARY_BTN}>
+              Get started
+            </Link>
 
             <button
               className="-mr-2 p-2 sm:hidden"
@@ -88,22 +93,24 @@ function Landing() {
             Publish and install SKILL.md files across Claude Code, Cursor, Codex, and every AI coding tool.
           </p>
 
-          <div className="mt-3 flex flex-col gap-2">
-            <button
-              type="button"
-              onClick={handleInstallCopy}
-              className="flex w-fit cursor-pointer items-center gap-2.5 rounded bg-stone-100 px-3 py-2 font-mono text-sm whitespace-nowrap transition-colors hover:bg-stone-200 active:bg-stone-250"
-            >
-              <span>{installCopied ? "Copied!" : "npm i -g skilo-cli"}</span>
-              <CopyIcon className="h-4 w-4 text-stone-400 shrink-0" />
-            </button>
-            <p className="text-xs text-stone-400">
-              No account required.{" "}
-              <Link to="/docs" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">
-                Read the docs&nbsp;&rarr;
-              </Link>
-            </p>
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <code className="rounded bg-stone-100 px-3 py-2 font-mono text-sm whitespace-nowrap">
+                npm i -g skilo-cli
+              </code>
+              <button type="button" onClick={handleInstallCopy} className={PRIMARY_BTN}>
+                <CopyIcon className="h-4 w-4" />
+                {installCopied ? "Copied" : "Copy"}
+              </button>
+            </div>
           </div>
+
+          <p className="text-xs text-stone-400 mt-1">
+            No account required.{" "}
+            <Link to="/docs" className="underline decoration-stone-300 underline-offset-[2px] hover:decoration-stone-400 transition-[text-decoration-color]">
+              Read the docs&nbsp;&rarr;
+            </Link>
+          </p>
         </div>
 
         {/* ── Terminal ── */}
