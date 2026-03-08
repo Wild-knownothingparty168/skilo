@@ -10,14 +10,7 @@ const FOOTER_LINK = "text-sm underline decoration-stone-400/50 underline-offset-
 
 function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [terminalCopied, setTerminalCopied] = useState(false);
   const [installCopied, setInstallCopied] = useState(false);
-
-  function handleTerminalCopy() {
-    navigator.clipboard.writeText("skilo share ./code-reviewer\nskilo add skilo.xyz/s/a3xK9mP2");
-    setTerminalCopied(true);
-    setTimeout(() => setTerminalCopied(false), 1500);
-  }
 
   function handleInstallCopy() {
     navigator.clipboard.writeText("npm i -g skilo-cli");
@@ -116,20 +109,10 @@ function Landing() {
         {/* ── Terminal ── */}
         <div className="mt-6">
           <div className="overflow-hidden rounded-xl border border-stone-800/80 shadow-lg shadow-stone-900/5">
-            <div className="flex items-center justify-between border-b border-stone-800/60 bg-stone-900 px-4 py-2.5">
-              <div className="flex items-center gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
-                <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
-                <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
-              </div>
-              <button
-                type="button"
-                onClick={handleTerminalCopy}
-                className="flex cursor-pointer items-center gap-1.5 text-xs text-stone-500 transition-colors duration-150 hover:text-stone-300"
-              >
-                <CopyIcon className="h-3.5 w-3.5" />
-                {terminalCopied ? "Copied" : "Copy"}
-              </button>
+            <div className="flex items-center gap-1.5 border-b border-stone-800/60 bg-stone-900 px-4 py-2.5">
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
+              <div className="h-2.5 w-2.5 rounded-full bg-stone-700" />
             </div>
             <div className="bg-stone-950 px-5 py-5 font-mono text-[13px] leading-6">
               <div>
