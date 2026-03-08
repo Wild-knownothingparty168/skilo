@@ -6,6 +6,7 @@
 
 ### Changed
 
+- Streamline add flow and install detection (`e09ee48`)
 - Stabilize generated changelog (`a3db895`)
 - Extract shared Layout for consistent header/footer (`a101bed`)
 - Polish repo metadata and contribution docs (`4754c7e`)
