@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skilo"
+  short_description: "Share and install agent skills with Skilo"
+  default_prompt: "Use $skilo to share, install, inspect, publish, or troubleshoot an agent skill with Skilo."
