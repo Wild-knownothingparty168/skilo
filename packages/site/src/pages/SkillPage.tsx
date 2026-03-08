@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
-import { marked } from "marked";
+import { renderMarkdown } from "../lib/markdown";
 import { CopyIcon } from "../components/icons";
 import { api } from "../api/skilo";
 import type { SkillMetadata } from "../api/skilo";
@@ -241,7 +241,7 @@ function SkillPage() {
             {skillContent !== null && !contentLoading && (
               <div
                 className="skill-md px-5 py-4 text-sm leading-relaxed text-stone-700 overflow-x-auto"
-                dangerouslySetInnerHTML={{ __html: marked.parse(skillContent, { async: false }) as string }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(skillContent) }}
               />
             )}
           </div>

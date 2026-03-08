@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* highlight.js — stone-matched dark theme */
+.hljs { color: #d6d3d1; }
+.hljs-comment,
+.hljs-quote { color: #78716c; font-style: italic; }
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-type { color: #c4b5fd; }
+.hljs-string,
+.hljs-addition { color: #6ee7b7; }
+.hljs-number,
+.hljs-literal { color: #fbbf24; }
+.hljs-built_in,
+.hljs-builtin-name { color: #67e8f9; }
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable { color: #fca5a5; }
+.hljs-title,
+.hljs-title\.function_,
+.hljs-section { color: #93c5fd; }
+.hljs-name,
+.hljs-tag { color: #f9a8d4; }
+.hljs-attribute { color: #fcd34d; }
+.hljs-symbol,
+.hljs-bullet { color: #a5b4fc; }
+.hljs-meta { color: #a8a29e; }
+.hljs-deletion { color: #fca5a5; background: rgba(239,68,68,0.1); }
+.hljs-addition { background: rgba(52,211,153,0.1); }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
+
 html {
   scrollbar-gutter: stable;
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { marked } from "marked";
+import { renderMarkdown } from "../lib/markdown";
 
 function Changelog() {
   const [html, setHtml] = useState("");
@@ -8,7 +8,7 @@ function Changelog() {
   useEffect(() => {
     fetch("/changelog.md")
       .then((r) => r.text())
-      .then((md) => setHtml(marked.parse(md, { async: false }) as string))
+      .then((raw) => setHtml(renderMarkdown(raw)))
       .catch(() => setHtml("<p>Could not load changelog.</p>"))
       .finally(() => setLoading(false));
   }, []);
