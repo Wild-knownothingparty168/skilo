@@ -40,6 +40,13 @@ export interface SkillsShSource {
   githubSource: string;
 }
 
+export interface RepoSkillShorthand {
+  owner: string;
+  repo: string;
+  skill: string;
+  githubSource: string;
+}
+
 function normalizeName(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -242,6 +249,21 @@ export function parseSkillsShSource(source: string): SkillsShSource | null {
   const repo = match[2];
   const skill = match[3];
 
+  return {
+    owner,
+    repo,
+    skill,
+    githubSource: `github:${owner}/${repo}`,
+  };
+}
+
+export function parseRepoSkillShorthand(source: string): RepoSkillShorthand | null {
+  const match = source.match(/^([^/@\s]+)\/([^/@\s]+)@([^@\s]+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const [, owner, repo, skill] = match;
   return {
     owner,
     repo,

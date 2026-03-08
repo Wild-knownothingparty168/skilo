@@ -16,7 +16,11 @@ import {
   resolveInstallTargets,
 } from '../utils/install-targets.js';
 import { exitWithError, isJsonOutput, logInfo, logSuccess, printJson, printNote, printUsage } from '../utils/output.js';
-import { isGitHubRepoLike } from '../utils/repo-skills.js';
+import { isGitHubRepoLike, parseRepoSkillShorthand } from '../utils/repo-skills.js';
+
+function looksLikeRegistryVersion(value: string): boolean {
+  return /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(value);
+}
 
 function parseSkillRef(skill: string): { namespace: string; name: string; version?: string } {
   const parts = skill.split('@');
@@ -34,6 +38,16 @@ export async function installCommand(skill: string, options: InstallOptions = {}
 
   try {
     skill = normalizeSourceInput(skill);
+    const repoSkillShorthand = parseRepoSkillShorthand(skill);
+    if (repoSkillShorthand && !looksLikeRegistryVersion(repoSkillShorthand.skill)) {
+      const { importCommand } = await import('./import.js');
+      await importCommand(`${repoSkillShorthand.owner}/${repoSkillShorthand.repo}`, {
+        ...options,
+        skill: options.skill?.length ? options.skill : [repoSkillShorthand.skill],
+      });
+      return;
+    }
+
     const prefersRepoSelection = Boolean(options.list || options.all || options.skill?.length);
 
     if (!await isRegistrySkillRef(skill) || (prefersRepoSelection && isGitHubRepoLike(skill))) {
