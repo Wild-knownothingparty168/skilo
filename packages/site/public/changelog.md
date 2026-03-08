@@ -4,6 +4,28 @@
 
 ## 2026-03-08
 
+### Changed
+
+- Stabilize generated changelog (`a3db895`)
+- Extract shared Layout for consistent header/footer (`a101bed`)
+- Polish repo metadata and contribution docs (`4754c7e`)
+- Serve markdown by default for agent fetches (`6d1a955`)
+- Align site onboarding with npx bootstrap (`03b8494`)
+- Auto-install CLI after npx bootstrap (`1e753c5`)
+- Simplify terminal demo, add react-grab dev tool (`1e88b7d`)
+- Improve agent-first CLI UX (`f1bfe63`)
+- Auto-serve markdown to LLMs via Pages Function (`2b74a8a`)
+- Improve agent and zero-arg entrypoints (`6dc1cda`)
+- Refine CLI output for humans and agents (`54b537c`)
+- Redesign site with stone/emerald aesthetic (`2f62ef3`)
+- Point site API to stable worker host (`f86e6ea`)
+- Use stable worker host for CLI API default (`2422692`)
+- Rename CLI package back to skilo-cli (`9354d95`)
+- Redesign landing page with ami-inspired minimal layout (`5ef64f9`)
+- Update site with npm install instructions (`e24419b`)
+- Publish skilo-cli@1.0.0 to npm (`4d151cf`)
+- Prepare cli package for npm publish (`1fdfdbd`)
+
 ### Added
 
 - Add first-class curated skill packs (`c33436b`)
@@ -23,27 +45,6 @@
 - Add short memorable anon names (2-letter prefix + noun) (`4b5bb0b`)
 - Add anon publishing with claim tokens (`07cd2ce`)
 - Add publishing lifecycle, trust & ops commands (`5406ccf`)
-
-### Changed
-
-- Extract shared Layout for consistent header/footer (`a101bed`)
-- Polish repo metadata and contribution docs (`4754c7e`)
-- Serve markdown by default for agent fetches (`6d1a955`)
-- Align site onboarding with npx bootstrap (`03b8494`)
-- Auto-install CLI after npx bootstrap (`1e753c5`)
-- Simplify terminal demo, add react-grab dev tool (`1e88b7d`)
-- Improve agent-first CLI UX (`f1bfe63`)
-- Auto-serve markdown to LLMs via Pages Function (`2b74a8a`)
-- Improve agent and zero-arg entrypoints (`6dc1cda`)
-- Refine CLI output for humans and agents (`54b537c`)
-- Redesign site with stone/emerald aesthetic (`2f62ef3`)
-- Point site API to stable worker host (`f86e6ea`)
-- Use stable worker host for CLI API default (`2422692`)
-- Rename CLI package back to skilo-cli (`9354d95`)
-- Redesign landing page with ami-inspired minimal layout (`5ef64f9`)
-- Update site with npm install instructions (`e24419b`)
-- Publish skilo-cli@1.0.0 to npm (`4d151cf`)
-- Prepare cli package for npm publish (`1fdfdbd`)
 
 ### Removed
 
