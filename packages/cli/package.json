@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "skilo": "./bin/skilo"
+    "skilo": "bin/skilo"
   },
   "files": [
     "dist/",
@@ -29,12 +29,18 @@
   "engines": {
     "node": ">=20"
   },
-  "keywords": ["ai", "agents", "skills", "cli", "sharing"],
+  "keywords": [
+    "ai",
+    "agents",
+    "skills",
+    "cli",
+    "sharing"
+  ],
   "author": "yazcaleb",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yazcaleb/skilo.git",
+    "url": "git+https://github.com/yazcaleb/skilo.git",
     "directory": "packages/cli"
   },
   "homepage": "https://skilo.xyz"
