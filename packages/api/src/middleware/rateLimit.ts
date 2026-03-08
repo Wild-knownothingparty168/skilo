@@ -89,6 +89,13 @@ export const rateLimiters = {
     keyPrefix: `ratelimit:password:${token}`,
   }),
 
+  // Create packs: 20/hour per IP
+  createPack: rateLimit({
+    windowMs: 60 * 60 * 1000,
+    maxRequests: 20,
+    keyPrefix: 'ratelimit:pack:create',
+  }),
+
   // Publish skills: 50/hour per IP
   publish: rateLimit({
     windowMs: 60 * 60 * 1000,  // 1 hour

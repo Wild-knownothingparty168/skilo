@@ -5,8 +5,9 @@ import { logger } from 'hono/logger';
 import { skillsRouter } from './routes/skills.js';
 import { authRouter } from './routes/auth.js';
 import { userRouter } from './routes/user.js';
+import { packsRouter } from './routes/packs.js';
 
-type Env = {
+export type Env = {
   DB: D1Database;
   SKILLPACK_BUCKET: R2Bucket;
   SKILLPACK_KV: KVNamespace;
@@ -25,6 +26,7 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: Date.now() }));
 app.route('/v1/skills', skillsRouter);
 app.route('/v1/auth', authRouter);
 app.route('/v1/user', userRouter);
+app.route('/v1/packs', packsRouter);
 
 // 404 handler
 app.notFound((c) => c.json({ error: 'not_found', message: 'Not found' }, 404));

@@ -27,6 +27,21 @@ export interface ShareLink {
   usesCount: number;
 }
 
+export interface PackSkill {
+  namespace: string;
+  name: string;
+  description: string;
+  version: string;
+  shareToken: string;
+  url: string;
+}
+
+export interface PackData {
+  name: string;
+  token: string;
+  skills: PackSkill[];
+}
+
 export const api = {
   async getSkill(namespace: string, name: string): Promise<SkillMetadata> {
     const res = await fetch(`${API_BASE}/v1/skills/${namespace}/${name}`);
@@ -37,6 +52,12 @@ export const api = {
   async resolveShare(token: string): Promise<{ skill: SkillMetadata; requiresPassword: boolean }> {
     const res = await fetch(`${API_BASE}/v1/skills/share/${token}`);
     if (!res.ok) throw new Error('Invalid or expired share link');
+    return res.json();
+  },
+
+  async resolvePack(token: string): Promise<PackData> {
+    const res = await fetch(`${API_BASE}/v1/packs/${token}`);
+    if (!res.ok) throw new Error('Pack not found');
     return res.json();
   },
 

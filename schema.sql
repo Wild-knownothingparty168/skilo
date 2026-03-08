@@ -158,3 +158,21 @@ CREATE TRIGGER skills_fts_update AFTER UPDATE ON skills BEGIN
   INSERT INTO skills_fts(rowid, name, description, namespace)
   VALUES (NEW.rowid, NEW.name, NEW.description, NEW.namespace);
 END;
+
+-- Packs (bulk share collections)
+CREATE TABLE packs (
+  id TEXT PRIMARY KEY,
+  token TEXT UNIQUE NOT NULL,
+  name TEXT,
+  created_at INTEGER DEFAULT (unixepoch())
+);
+
+CREATE TABLE pack_items (
+  pack_id TEXT NOT NULL REFERENCES packs(id) ON DELETE CASCADE,
+  share_link_id TEXT NOT NULL REFERENCES share_links(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (pack_id, share_link_id)
+);
+
+CREATE INDEX idx_packs_token ON packs(token);
+CREATE INDEX idx_pack_items_pack ON pack_items(pack_id);

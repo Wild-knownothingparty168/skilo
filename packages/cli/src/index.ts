@@ -97,8 +97,9 @@ program
 
 // Sharing
 program
-  .command('share <skill>')
-  .description('Create shareable link')
+  .command('share <target>')
+  .description('Share skills (tool name: claude, codex, cursor, etc. or path/ref)')
+  .option('-y, --yes', 'Share all without interactive selection')
   .option('--one-time', 'One-time use link')
   .option('--expires <time>', 'Expires in (e.g., 1h, 2d)')
   .option('--uses <n>', 'Max uses')

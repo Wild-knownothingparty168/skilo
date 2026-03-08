@@ -8,12 +8,13 @@ interface SkillCardProps {
   description?: string;
   version?: string;
   status?: 'anonymous' | 'claimed' | 'verified';
+  shareToken?: string;
 }
 
-function SkillCard({ namespace, name, description, version, status = 'anonymous' }: SkillCardProps) {
+function SkillCard({ namespace, name, description, version, status = 'anonymous', shareToken }: SkillCardProps) {
   return (
     <Link
-      to={`/s/${namespace}/${name}`}
+      to={shareToken ? `/s/${shareToken}` : `/s/${namespace}/${name}`}
       className="block p-5 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-skilo-300 dark:hover:border-skilo-700 hover:shadow-sm transition-all"
     >
       <div className="flex items-start justify-between gap-4">

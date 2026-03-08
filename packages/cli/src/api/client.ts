@@ -38,7 +38,7 @@ export class ApiClient {
   private getHeaders(): HeadersInit {
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      'User-Agent': 'skilo-cli/1.0.1',
+      'User-Agent': '@skilo/cli/1.0.1',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -127,7 +127,7 @@ export class ApiClient {
     const res = await fetchWithRetry(url, {
       method: 'POST',
       headers: {
-        'User-Agent': 'skilo-cli/1.0.1',
+        'User-Agent': '@skilo/cli/1.0.1',
         ...(this.token ? { Authorization: `Bearer ${this.token}` } : {}),
       },
       body: formData,
@@ -218,7 +218,7 @@ export class ApiClient {
     expiresAt?: number,
     maxUses?: number,
     password?: string
-  ): Promise<{ url: string }> {
+  ): Promise<{ token: string; url: string }> {
     const url = `${this.baseUrl}/v1/skills/${namespace}/${name}/share`;
     const res = await fetchWithRetry(url, {
       method: 'POST',
@@ -233,6 +233,24 @@ export class ApiClient {
 
     if (!res.ok) {
       throw new Error(`Share failed: ${res.status} ${res.statusText}`);
+    }
+
+    return res.json();
+  }
+
+  async createPack(
+    name: string,
+    shareTokens: string[]
+  ): Promise<{ token: string; url: string; count: number }> {
+    const url = `${this.baseUrl}/v1/packs`;
+    const res = await fetchWithRetry(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ name, share_tokens: shareTokens }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Create pack failed: ${res.status} ${res.statusText}`);
     }
 
     return res.json();

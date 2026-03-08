@@ -2,14 +2,14 @@
 
 Instant skill handoff. Share agent skills between people and AI systems with a single command.
 
-[![npm version](https://badge.fury.io/js/skilo-cli.svg)](https://www.npmjs.com/package/skilo-cli)
+[![npm version](https://badge.fury.io/js/%40skilo%2Fcli.svg)](https://www.npmjs.com/package/@skilo/cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ```
-$ npx skilo-cli share ./my-skill
+$ npx @skilo/cli share ./my-skill
 🔗 https://skilo.xyz/s/a3xK9mP2
 
-$ npx skilo-cli add https://skilo.xyz/s/a3xK9mP2
+$ npx @skilo/cli add https://skilo.xyz/s/a3xK9mP2
 ✓ Installed @anonymous/my-skill
 ```
 
@@ -33,9 +33,9 @@ Current skill sharing requires GitHub repos, team manifests, or complex setup. S
 ### Install
 
 ```bash
-npm install -g skilo-cli
+npm install -g @skilo/cli
 # or use without installing:
-npx skilo-cli <command>
+npx @skilo/cli <command>
 ```
 
 ### Share a skill
