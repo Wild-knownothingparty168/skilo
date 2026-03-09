@@ -7,8 +7,6 @@ Share agent skills with a link. No repo required.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-1f6feb.svg)](./CONTRIBUTING.md)
 
-Keywords: `agent skills`, `SKILL.md`, `AI coding tools`, `Claude Code`, `Codex`, `Cursor`, `OpenCode`, `skill sharing`, `developer tools`
-
 - Website: https://skilo.xyz
 - Docs: https://skilo.xyz/docs
 - CLI: https://www.npmjs.com/package/skilo-cli
@@ -24,18 +22,18 @@ Installed anonymous/my-skill
 
 ## Why Skilo?
 
-Current skill sharing usually means repos, manifests, or manual copy-paste. Skilo keeps the social layer simple: send a skill like a link, not like a project.
+Skill sharing usually means repos, manifests, or manual copy-paste. Skilo keeps it simple: send a skill like a link, not like a project.
 
-**The difference from Vercel's skills.sh:** While skills.sh is discovery-focused with leaderboards, Skilo is transfer-focused. It's the obvious answer for sharing a skill directly when there is no repo flow, no team manifest, and no desire to sign up first.
+**vs. Vercel's skills.sh:** skills.sh is discovery-focused with leaderboards. Skilo is transfer-focused — sharing a skill directly when there is no repo flow, no team manifest, and no desire to sign up first. Skilo also installs skills.sh skills natively.
 
 ## Features
 
-- **⚡ Share instantly** - Create a link in seconds, no registration required
-- **🌐 Add anywhere** - Install into Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, or OpenClaw with auto-detection or explicit target flags
-- **🔒 Trust what you install** - Inspect, verify checksums, then add with confidence
-- **⏱️ Expiring links** - One-time use, time-limited, or max-uses links
-- **🔐 Password protection** - Extra security for sensitive skills
-- **✍️ Signed bundles** - Ed25519 signatures for verified publishers
+- **Share instantly** — create a link in seconds, no registration required
+- **Add anywhere** — install into Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, or OpenClaw with auto-detection or explicit target flags
+- **Trust what you install** — inspect, verify checksums, then add with confidence
+- **Expiring links** — one-time use, time-limited, or max-uses links
+- **Password protection** — extra security for sensitive skills
+- **Signed bundles** — Ed25519 signatures for verified publishers
 
 ## Quick Start
 
@@ -47,27 +45,16 @@ npm install -g skilo-cli
 npx skilo-cli <command>
 ```
 
-Every `npx skilo-cli ...` run now refreshes `skilo-cli@latest` in the background so the global `skilo` binary stays ready. The installed `skilo` binary also self-updates in the background. Set `SKILO_NO_AUTO_INSTALL=1` to disable npx bootstrap refreshes or `SKILO_NO_AUTO_UPDATE=1` to disable installed-binary self-updates.
+Every `npx skilo-cli ...` run refreshes `skilo-cli@latest` in the background so the global `skilo` binary stays ready. The installed binary also self-updates. Set `SKILO_NO_AUTO_INSTALL=1` to disable bootstrap refreshes or `SKILO_NO_AUTO_UPDATE=1` to disable self-updates.
 
 ### Share a skill
 
 ```bash
-# Basic share
 skilo share ./my-skill
-
-# One-time link (expires after first use)
 skilo share ./my-skill --one-time
-
-# Expires in 1 hour
 skilo share ./my-skill --expires 1h
-
-# Max 5 uses
 skilo share ./my-skill --uses 5
-
-# Password protected
 skilo share ./my-skill --password
-
-# Make the underlying skill public before creating the share link
 skilo share ./my-skill --listed
 ```
 
@@ -76,66 +63,37 @@ skilo share ./my-skill --listed
 ### Login and publish
 
 ```bash
-# Create a publishing identity
 skilo login yaz
-
-# Restore an existing account with an API key
 skilo login --token sk_...
-
-# Publish publicly under your namespace
 skilo publish --listed
-
-# Publish direct-link only
 skilo publish --unlisted
-
-# List what you've published
 skilo list --published
 ```
 
 ### Install a skill
 
 ```bash
-# From a share link
 skilo add https://skilo.xyz/s/a3xK9mP2
-
-# Bare Skilo links also work
 skilo add skilo.xyz/s/a3xK9mP2
-
-# Auto-detects installed tools. Force a target when needed.
 skilo add https://skilo.xyz/s/a3xK9mP2 --cc
-skilo add https://skilo.xyz/s/a3xK9mP2 --codex
-skilo add https://skilo.xyz/s/a3xK9mP2 --oc
-
-# Into multiple targets explicitly
 skilo add https://skilo.xyz/s/a3xK9mP2 --codex --cursor --roo
-
-# From namespace/name
 skilo add namespace/skill-name
-
-# From GitHub
 skilo import github:user/repo
+skilo import ./skill.skl
 
-# From a multi-skill repo
+# Multi-skill repos
 skilo add owner/repo --list
 skilo add owner/repo --skill resolve-issue --codex
 skilo add https://github.com/user/repo/tree/main/skills/resolve-issue --cursor
-
-# From .skl file
-skilo import ./skill.skl
 ```
 
-Skilo now supports Vercel-style multi-skill GitHub repos directly. Use `--list` to inspect discovered skills, `--skill <name>` to install a specific one, or `--all` to install everything in the source repo.
+Supports Vercel-style multi-skill GitHub repos. Use `--list` to inspect discovered skills, `--skill <name>` to install a specific one, or `--all` to install everything.
 
 ### Copy skills between tools
 
 ```bash
-# Sync selected Claude Code skills into OpenCode
 skilo sync claude opencode
-
-# Non-interactive: sync everything from Claude Code into OpenCode
 skilo sync claude opencode --all
-
-# Use add/import with a tool as the local source
 skilo add claude --oc --all
 skilo import claude --skill reviewer --oc
 skilo add codex --cursor
@@ -149,13 +107,8 @@ Without target flags:
 ### Create a curated pack
 
 ```bash
-# Pack together any mix of local skills, refs, and share links
 skilo pack ./skills/reviewer flrabbit/original-landing-page-builder skilo.xyz/s/WMnC3vqJ --name "Founder's starter pack"
-
-# Install the whole pack with one command
 skilo add https://skilo.xyz/p/abc123
-
-# Install only part of a pack
 skilo add https://skilo.xyz/p/abc123 --only reviewer,planner
 skilo add https://skilo.xyz/p/abc123 --skip debugger
 ```
@@ -166,8 +119,6 @@ Interactive `skilo add` on a pack shows a checked-by-default picker. If you dese
 
 ```bash
 skilo inspect https://skilo.xyz/s/a3xK9mP2
-
-# Machine-readable output for agents
 skilo inspect https://skilo.xyz/s/a3xK9mP2 --json
 ```
 
@@ -176,17 +127,20 @@ skilo inspect https://skilo.xyz/s/a3xK9mP2 --json
 | Command | Description |
 |---------|-------------|
 | `skilo share <path>` | Create a shareable link |
-| `skilo add <skill>` | Install a skill from a share link, registry ref, or other source |
+| `skilo add <skill>` | Install from a share link, registry ref, or other source |
 | `skilo inspect <skill>` | View skill details without installing |
 | `skilo export [path]` | Export to .skl file |
 | `skilo import <source>` | Import from GitHub, .skl, or local path |
-| `skilo sync [source] [targets...]` | Sync local project skills or copy skills between tools |
-| `skilo pack [sources...]` | Create a .tgz bundle or a curated shareable pack |
+| `skilo sync [source] [targets...]` | Copy skills between tools or sync with lockfile |
+| `skilo pack [sources...]` | Create a curated shareable pack |
 | `skilo publish [path]` | Publish to the registry |
 | `skilo login [username]` | Create or restore a publishing identity |
 | `skilo list --published` | List skills under your namespace |
 | `skilo init [name]` | Create a new skill |
 | `skilo validate` | Validate SKILL.md |
+| `skilo audit [source]` | Audit installed skills for risks |
+| `skilo deprecate <skill>` | Mark a skill as deprecated |
+| `skilo yank <skill@version>` | Remove a specific version |
 
 Repo-source options for `add`, `install`, and `import`:
 
@@ -202,26 +156,22 @@ Pack options for `pack [sources...]`:
 
 ## Agent-Friendly Usage
 
-Skilo is designed to work for both humans and agents.
-
-- Run `npx skilo-cli` for a guided entrypoint.
-- Run `npx skilo-cli --json` for a machine-readable starter payload.
-- Add `--json` to `share`, `add`, `import`, `inspect`, `search`, and `info` when you want structured output.
-- Set `SKILO_TARGETS=codex,cursor` to control default install targets in non-interactive environments.
+- `npx skilo-cli` — guided entrypoint
+- `npx skilo-cli --json` — machine-readable starter payload
+- `--json` flag works on `share`, `add`, `import`, `inspect`, `search`, and `info`
+- `SKILO_TARGETS=codex,cursor` — control default install targets in non-interactive environments
 
 ## Vercel Compatibility
 
-Skilo is compatible with Vercel-style GitHub skill repos and keeps the parts that matter:
+Compatible with Vercel-style GitHub skill repos:
 
-- install from `owner/repo` when combined with `--list`, `--skill`, or `--all`
+- install from `owner/repo` with `--list`, `--skill`, or `--all`
 - install from full GitHub repo and `tree/...` URLs
 - discover nested `SKILL.md` directories in multi-skill repos
 - detect skill paths referenced from common plugin manifests
-- keep unlisted sharing, one-time links, expiring links, password protection, and direct 1:1 handoff on top
+- unlisted sharing, expiring links, password protection, and direct 1:1 handoff on top
 
 ## Supported Tools
-
-Skilo installs into these native skill directories:
 
 | Tool | Directory |
 |------|-----------|
@@ -241,21 +191,19 @@ Skilo installs into these native skill directories:
 
 ```
 skill.skl (tar.gz)
-├── SKILL.md           # Required manifest
-├── index.js           # Entry point
-├── src/               # Source files
-└── .skilo-manifest    # Signature + metadata
+├── SKILL.md
+├── index.js
+├── src/
+└── .skilo-manifest
 ```
 
 ## Trust & Verification
 
-Skilo uses multiple mechanisms to help you trust what you install:
+- **Anonymous** — published without authentication
+- **Claimed** — a user has claimed ownership of an anonymous skill
+- **Verified** — publisher identity confirmed via email or GitHub
 
-- **Anonymous** - Skills published without authentication. Safe to try in isolated environments.
-- **Claimed** - A user has claimed ownership of an anonymous skill.
-- **Verified** - Publisher identity has been confirmed via email or GitHub.
-
-All skills have SHA-256 checksums. Verified skills are also cryptographically signed with Ed25519.
+All skills have SHA-256 checksums. Verified skills are also signed with Ed25519.
 
 ## Architecture
 
@@ -274,31 +222,21 @@ All skills have SHA-256 checksums. Verified skills are also cryptographically si
 
 ## Self-Hosting
 
-Skilo is fully open source and can be self-hosted:
-
 ```bash
-# 1. Clone the repo
 git clone https://github.com/yazcaleb/skilo.git
 cd skilo
-
-# 2. Create Cloudflare resources
 pnpm dlx wrangler d1 create skilo
 pnpm dlx wrangler r2 bucket create skilo-bundles
 pnpm dlx wrangler kv namespace create "SKILLPACK_KV"
-
-# 3. Update wrangler.toml with your IDs
-
-# 4. Push schema to D1
+# Update wrangler.toml with your IDs
 pnpm dlx wrangler d1 execute skilo --file=schema.sql --remote
-
-# 5. Deploy
 pnpm --filter @skilo/api deploy
 pnpm --filter @skilo/site deploy
 ```
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](./CONTRIBUTING.md) and keep PRs focused, tested, and documented.
+Start with [CONTRIBUTING.md](./CONTRIBUTING.md). Keep PRs focused, tested, and documented.
 
 ## License
 
