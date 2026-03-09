@@ -182,7 +182,7 @@ function PackPage() {
             </div>
           </div>
         </div>
-        <p className="text-xs text-stone-400 -mt-1">
+        <p className="text-xs text-stone-500 -mt-1">
           Auto-detects installed tools. Resolves refs and installs all skills.
         </p>
 
@@ -221,7 +221,7 @@ function PackPage() {
                 {item.token ? (
                   <Link
                     to={`/s/${item.token}`}
-                    className="shrink-0 text-stone-300 text-sm hover:text-stone-500 transition-colors"
+                    className="shrink-0 text-stone-400 text-sm hover:text-stone-600 transition-colors"
                   >
                     &rarr;
                   </Link>
@@ -230,7 +230,7 @@ function PackPage() {
                     href={item.entry.pageUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="shrink-0 text-stone-300 text-sm hover:text-stone-500 transition-colors"
+                    className="shrink-0 text-stone-400 text-sm hover:text-stone-600 transition-colors"
                   >
                     &rarr;
                   </a>
@@ -273,7 +273,7 @@ function PackPage() {
           </span>
           {verifiedCount > 0 && (
             <>
-              <span className="text-stone-300">&middot;</span>
+              <span className="text-stone-400">&middot;</span>
               <span className="text-emerald-500">
                 {verifiedCount === pack.skills.length
                   ? "all verified"
@@ -283,7 +283,7 @@ function PackPage() {
           )}
           {packTrust && (
             <>
-              <span className="text-stone-300">&middot;</span>
+              <span className="text-stone-400">&middot;</span>
               <span className={
                 packAudit === "blocked"
                   ? "text-red-500"
@@ -358,7 +358,7 @@ function PackPage() {
           </div>
         </div>
       </div>
-      <p className="text-xs text-stone-400 -mt-1">
+      <p className="text-xs text-stone-500 -mt-1">
         Auto-detects installed tools.{" "}
         Run{" "}
         <code className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[11px]">
@@ -465,7 +465,7 @@ function PackPage() {
                 </Link>
                 <Link
                   to={`/s/${skill.shareToken}`}
-                  className="shrink-0 text-stone-300 text-sm group-hover:text-stone-500 transition-colors pt-0.5"
+                  className="shrink-0 text-stone-400 text-sm group-hover:text-stone-600 transition-colors pt-0.5"
                 >
                   &rarr;
                 </Link>

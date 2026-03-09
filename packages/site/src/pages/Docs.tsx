@@ -245,6 +245,26 @@ function Docs() {
           </p>
         </section>
 
+        {/* ── Claiming ── */}
+        <section id="claim" className="flex flex-col gap-2 mt-4">
+          <p className="font-medium">Claiming skills</p>
+          <p className="text-stone-600">
+            When you publish without being logged in, you get an anonymous namespace and a claim token. The CLI saves it to <Code>~/.skilo/claims/</Code> automatically.
+          </p>
+          <ol className="flex list-decimal flex-col gap-2 pl-5 text-stone-600">
+            <li><span className="font-medium text-black">Publish a skill.</span> Run <Code>skilo publish</Code> without logging in. You'll get an anonymous namespace and claim token.</li>
+            <li><span className="font-medium text-black">Save the token.</span> It's saved to <Code>~/.skilo/claims/</Code> and printed in the terminal.</li>
+            <li><span className="font-medium text-black">Log in and claim.</span> Run <Code copy>skilo login your-name</Code>, then claim ownership:</li>
+          </ol>
+          <Terminal lines={[
+            { cmd: "skilo claim @namespace/skill-name --token YOUR_TOKEN" },
+            { out: "\u2713 Claimed skill under your-name/skill-name" },
+          ]} />
+          <p className="text-stone-600">
+            After logging in you can also publish directly under your namespace without the anonymous claim flow.
+          </p>
+        </section>
+
         {/* ── Tool directories ── */}
         <section className="flex flex-col gap-2 mt-4">
           <p className="font-medium">Supported tools</p>

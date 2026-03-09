@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { SkiloMark, ExternalLinkIcon, HamburgerIcon } from "./icons";
-import { Cloudflare } from "@lobehub/icons";
+import { SkiloMark, HamburgerIcon } from "./icons";
+import { Cloudflare, Github } from "@lobehub/icons";
 
-const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
-const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
-const FOOTER_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
+const NAV_ITEM = "text-sm text-stone-500 transition-colors hover:text-black";
+const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 hover:bg-emerald-200/70 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow,background-color] duration-75 cursor-pointer select-none";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -19,17 +18,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             Skilo
           </Link>
 
-          <div className="flex items-center gap-4 sm:gap-6">
-            <span className="hidden items-center gap-4 text-sm sm:flex">
-              <Link to="/docs" className={NAV_LINK}>Docs</Link>
+          <div className="flex items-center gap-5 sm:gap-6">
+            <span className="hidden items-center gap-5 sm:flex">
+              <Link to="/docs" className={NAV_ITEM}>Docs</Link>
               <a
                 href="https://github.com/yazcaleb/skilo"
-                className={NAV_LINK}
+                className={NAV_ITEM}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="GitHub"
               >
-                GitHub
-                <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 align-baseline" />
+                <Github size={18} />
               </a>
             </span>
 
@@ -49,16 +48,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         {mobileMenuOpen && (
           <div className="border-t border-stone-100 bg-white px-5 pb-4 sm:hidden">
-            <nav className="flex flex-col gap-3 pt-3 text-sm">
-              <Link to="/docs" className={NAV_LINK} onClick={() => setMobileMenuOpen(false)}>Docs</Link>
+            <nav className="flex flex-col gap-3 pt-3">
+              <Link to="/docs" className={NAV_ITEM} onClick={() => setMobileMenuOpen(false)}>Docs</Link>
               <a
                 href="https://github.com/yazcaleb/skilo"
-                className={NAV_LINK}
+                className={`${NAV_ITEM} w-fit`}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="GitHub"
               >
-                GitHub
-                <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 align-baseline" />
+                <Github size={18} />
               </a>
             </nav>
           </div>
@@ -67,25 +66,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {children}
 
-      <footer className="mx-auto flex max-w-6xl flex-col items-center gap-3 p-5 pt-0 text-sm text-stone-500 lg:p-10 lg:pt-0">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <Link to="/docs" className={FOOTER_LINK}>Docs</Link>
-          <Link to="/claim" className={FOOTER_LINK}>Claim</Link>
-          <Link to="/changelog" className={FOOTER_LINK}>Changelog</Link>
-          <a
-            href="https://github.com/yazcaleb/skilo"
-            className={FOOTER_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-            <ExternalLinkIcon className="ml-1 inline-block h-3 w-3 align-baseline" />
-          </a>
+      <footer className="mx-auto max-w-6xl border-t border-stone-100 px-5 py-8 lg:px-10">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex items-center gap-5">
+            <Link to="/docs" className={NAV_ITEM}>Docs</Link>
+            <Link to="/changelog" className={NAV_ITEM}>Changelog</Link>
+            <a
+              href="https://github.com/yazcaleb/skilo"
+              className={NAV_ITEM}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+            >
+              <Github size={16} />
+            </a>
+          </div>
+          <span className="flex items-center gap-1.5 text-xs text-stone-400">
+            <Cloudflare size={14} />
+            Runs on Cloudflare
+          </span>
         </div>
-        <span className="flex items-center gap-1.5 text-xs text-stone-300">
-          <Cloudflare size={14} />
-          Runs on Cloudflare
-        </span>
       </footer>
     </>
   );

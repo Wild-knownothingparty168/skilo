@@ -6,7 +6,7 @@ import { api } from "../api/skilo";
 import type { ShareLinkInfo, SkillMetadata } from "../api/skilo";
 
 const NAV_LINK = "text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150";
-const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
+const PRIMARY_BTN = "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 hover:bg-emerald-200/70 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow,background-color] duration-75 cursor-pointer select-none";
 const MAIN = "flex flex-col gap-4 max-w-[600px] mx-auto p-5 pt-28 pb-20 lg:p-10 lg:pt-32 lg:pb-32 leading-relaxed text-base";
 
 function SkillPage() {
@@ -109,7 +109,7 @@ function SkillPage() {
           <p className="text-lg font-medium text-black tracking-[-0.01em]">
             {refLink.ref}
           </p>
-          <p className="text-stone-500 text-sm">Skill reference</p>
+          <p className="text-stone-600 text-sm">Skill reference</p>
         </div>
 
         <div className="mt-4 overflow-hidden rounded-xl border border-stone-800/80 shadow-lg shadow-stone-900/5">
@@ -139,7 +139,7 @@ function SkillPage() {
             </div>
           </div>
         </div>
-        <p className="text-xs text-stone-400 -mt-1">
+        <p className="text-xs text-stone-500 -mt-1">
           Auto-detects installed tools. Resolves the ref and installs the skill.
         </p>
 
@@ -213,11 +213,11 @@ function SkillPage() {
           <span>v{skill.version}</span>
           {skill.author && (
             <>
-              <span className="text-stone-300">&middot;</span>
+              <span className="text-stone-400">&middot;</span>
               <span>{skill.author}</span>
             </>
           )}
-          <span className="text-stone-300">&middot;</span>
+          <span className="text-stone-400">&middot;</span>
           <span>{(skill.size / 1024).toFixed(1)} KB</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -288,7 +288,7 @@ function SkillPage() {
           </div>
         </div>
       </div>
-      <p className="text-xs text-stone-400 -mt-1">
+      <p className="text-xs text-stone-500 -mt-1">
         Auto-detects installed tools.{" "}
         Run <code className="rounded bg-stone-100 px-1 py-0.5 font-mono text-[11px]">{inspectCmd}</code> to review first.
       </p>

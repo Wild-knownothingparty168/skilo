@@ -5,7 +5,6 @@ import SkillPage from './pages/SkillPage';
 import SharePage from './pages/SharePage';
 import Docs from './pages/Docs';
 import PackPage from './pages/PackPage';
-import ClaimPage from './pages/ClaimPage';
 import Changelog from './pages/Changelog';
 import ProfilePage from './pages/ProfilePage';
 
@@ -19,7 +18,6 @@ function App() {
         <Route path="/docs" element={<Docs />} />
         <Route path="/p/:token" element={<PackPage />} />
         <Route path="/u/:username" element={<ProfilePage />} />
-        <Route path="/claim" element={<ClaimPage />} />
         <Route path="/changelog" element={<Changelog />} />
       </Routes>
     </Layout>

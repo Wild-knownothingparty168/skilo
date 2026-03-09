@@ -47,8 +47,7 @@ If no explicit target flag is passed, Skilo auto-detects installed tools. If exa
 
 ## Docs
 
-- [Documentation](https://skilo.xyz/docs.md): CLI commands, SKILL.md format, supported tools, trust model
-- [Claim a skill](https://skilo.xyz/claim.md): How to claim anonymously published skills
+- [Documentation](https://skilo.xyz/docs.md): CLI commands, SKILL.md format, supported tools, trust model, claiming skills
 - [Full context](https://skilo.xyz/llms-full.txt): All documentation in a single file
 - [Changelog](https://skilo.xyz/changelog): What's new, auto-generated from commit history
 

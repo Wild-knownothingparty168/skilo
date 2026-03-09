@@ -4,8 +4,6 @@ const STATIC_MARKDOWN = {
   '/': '/llms-full.txt',
   '/docs': '/docs.md',
   '/docs/': '/docs.md',
-  '/claim': '/claim.md',
-  '/claim/': '/claim.md',
   '/changelog': '/changelog.md',
   '/changelog/': '/changelog.md',
 };

@@ -12,10 +12,11 @@ import {
   Cline,
   RooCode,
   OpenClaw,
+  Vercel,
 } from "@lobehub/icons";
 
 const PRIMARY_BTN =
-  "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
+  "inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded text-[#0a1a1a] text-sm font-medium whitespace-nowrap bg-emerald-100 hover:bg-emerald-200/70 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow,background-color] duration-75 cursor-pointer select-none";
 
 type ResolvedLine = {
   ref: string;
@@ -100,6 +101,7 @@ function Landing() {
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [installCopied, setInstallCopied] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
   const [copied, setCopied] = useState(false);
   const [packing, setPacking] = useState(false);
   const [packResult, setPackResult] = useState<PackResult | null>(null);
@@ -175,6 +177,14 @@ function Landing() {
     setTimeout(() => setInstallCopied(false), 1500);
   }
 
+  function handlePromptCopy() {
+    navigator.clipboard.writeText(
+      "Read https://skilo.xyz/llms.txt and share my skills with Skilo."
+    );
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 1500);
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (single?.nav) navigate(single.nav);
@@ -202,7 +212,7 @@ function Landing() {
       <h1 className="text-[22px] font-medium leading-snug tracking-[-0.02em] text-black">
         Share agent skills with a link
       </h1>
-      <p className="mt-2 text-[15px] leading-relaxed text-stone-500">
+      <p className="mt-2 text-[15px] leading-relaxed text-stone-600">
         Paste one skill, link, repo, or several lines to make a pack. Install anywhere in one command.
       </p>
 
@@ -220,10 +230,6 @@ function Landing() {
             spellCheck={false}
             rows={1}
           />
-
-          {resolved.length === 0 && (
-            <p className="text-xs text-stone-300">One input copies the install command. Several lines make one pack link.</p>
-          )}
 
           {single && single.nav && (
             <Link
@@ -324,8 +330,7 @@ function Landing() {
         </div>
       )}
 
-      <div className="mt-6 flex items-center gap-3">
-        <span className="text-sm text-stone-400">or run</span>
+      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
         <code className="rounded bg-stone-100 px-3 py-1.5 font-mono text-[13px] text-stone-600">
           npx skilo-cli
         </code>
@@ -333,12 +338,16 @@ function Landing() {
           <CopyIcon className="h-4 w-4" />
           {installCopied ? "Copied" : "Copy"}
         </button>
+        <span className="text-stone-400">or</span>
+        <button type="button" onClick={handlePromptCopy} className={PRIMARY_BTN}>
+          {promptCopied ? "Copied" : "Tell your agent"}
+        </button>
       </div>
 
       {stats && (
-        <p className="mt-4 text-xs tabular-nums text-stone-400">
+        <p className="mt-4 text-xs tabular-nums text-stone-500">
           {stats.skills.toLocaleString()} skills published
-          <span className="mx-1.5 text-stone-300">/</span>
+          <span className="mx-1.5 text-stone-400">/</span>
           {stats.installs.toLocaleString()} installs
         </p>
       )}
@@ -357,7 +366,7 @@ function Landing() {
       </div>
 
       <div className="mt-14">
-        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-stone-300">
+        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-stone-400">
           Works with
         </p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
@@ -372,13 +381,16 @@ function Landing() {
             { Icon: RooCode, name: "Roo" },
             { Icon: OpenClaw, name: "OpenClaw" },
           ].map(({ Icon, name }) => (
-            <span key={name} className="flex items-center gap-1.5 text-stone-400">
+            <span key={name} className="flex items-center gap-1.5 text-stone-500">
               <Icon size={16} />
               <span className="text-xs">{name}</span>
             </span>
           ))}
-          <span className="text-xs text-stone-300">+ more</span>
+          <span className="text-xs text-stone-400">+ more</span>
         </div>
+        <p className="mt-4 flex items-center gap-1.5 text-xs text-stone-500">
+          <Vercel size={12} /> Installs any <a href="https://skills.sh" target="_blank" rel="noopener noreferrer" className="underline decoration-stone-400/50 underline-offset-2 transition-[text-decoration-color] hover:decoration-stone-500">skills.sh</a> skill natively
+        </p>
       </div>
     </main>
   );

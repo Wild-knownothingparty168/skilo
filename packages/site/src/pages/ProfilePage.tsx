@@ -64,7 +64,7 @@ function ProfilePage() {
         </p>
         <Link
           to="/"
-          className="text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500"
+          className="text-sm underline decoration-stone-400/50 underline-offset-[2.5px] hover:decoration-stone-500 transition-[text-decoration-color] duration-150"
         >
           Back to home
         </Link>
@@ -75,7 +75,7 @@ function ProfilePage() {
   return (
     <main className={MAIN}>
       <header className="flex flex-col gap-2">
-        <p className="text-sm uppercase tracking-[0.18em] text-stone-400">
+        <p className="text-sm uppercase tracking-[0.18em] text-stone-500">
           Publisher
         </p>
         <h1 className="text-[32px] font-medium tracking-[-0.03em] text-black">

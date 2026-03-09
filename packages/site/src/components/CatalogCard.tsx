@@ -4,7 +4,7 @@ import type { CatalogEntry } from "../api/skilo";
 import { CopyIcon, ExternalLinkIcon } from "./icons";
 
 const PRIMARY_BTN =
-  "inline-flex items-center justify-center gap-2 rounded px-3 py-1.5 text-sm font-medium text-[#0a1a1a] whitespace-nowrap bg-emerald-100 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow] duration-75 cursor-pointer select-none";
+  "inline-flex items-center justify-center gap-2 rounded px-3 py-1.5 text-sm font-medium text-[#0a1a1a] whitespace-nowrap bg-emerald-100 hover:bg-emerald-200/70 shadow-[0_2px_0_0_#6ee7b7] active:translate-y-px active:shadow-[0_1px_0_0_#34d399] transition-[transform,box-shadow,background-color] duration-75 cursor-pointer select-none";
 const SECONDARY_BTN =
   "inline-flex items-center justify-center gap-2 rounded border border-stone-200 px-3 py-1.5 text-sm font-medium text-stone-700 transition-colors hover:border-stone-300 hover:text-black";
 

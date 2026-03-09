@@ -132,6 +132,20 @@ Every published skill has a SHA-256 checksum. The CLI verifies integrity on inst
 
 Use `skilo inspect` to review a skill's content and checksum before you install.
 
+## Claiming skills
+
+When you publish without being logged in, you get an anonymous namespace and a claim token. The CLI saves it to `~/.skilo/claims/` automatically.
+
+1. **Publish a skill.** Run `skilo publish` without logging in. You'll get an anonymous namespace and claim token.
+2. **Save the token.** It's saved to `~/.skilo/claims/` and printed in the terminal.
+3. **Log in and claim.** Run `skilo login your-name`, then claim ownership:
+
+```
+skilo claim @namespace/skill-name --token YOUR_TOKEN
+```
+
+After logging in you can also publish directly under your namespace without the anonymous claim flow.
+
 ## Supported tools
 
 Skilo discovers skills from these directories:
